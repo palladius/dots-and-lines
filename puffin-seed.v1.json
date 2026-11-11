@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "seed": "puffin-airplane-seed-2026",
+  "salt": "puffin-salt-2026",
+  "algorithm": "md5(seed:userId:secret)",
+  "fallbackWarning": {
+    "it": "⚠️✈️ Modalità Aereo / Offline attiva: password verificata localmente tramite MD5 + seed (puffin-airplane-seed-2026). I punteggi sono salvati in locale e verranno sincronizzati appena torna internet!",
+    "en": "⚠️✈️ Airplane / Offline Mode active: password verified locally via MD5 + seed (puffin-airplane-seed-2026). Scores are saved locally and will sync when back online!"
+  },
+  "profiles": {
+    "riccardo": {
+      "id": "riccardo",
+      "displayName": "Papino Riccardo",
+      "role": "adult",
+      "authType": "password",
+      "secretMd5": "2cddba842da10bf318eb1bc37238c788",
+      "secretHash": "bbad2523d48656e6eac389d4e69455244258b9be4c206dcf1cd1c9ac6cadc8f8"
+    },
+    "kate": {
+      "id": "kate",
+      "displayName": "Mamma Kate",
+      "role": "adult",
+      "authType": "password",
+      "secretMd5": "6b1268fa3ea254dadd3071a7b54faafa",
+      "secretHash": "cc931f6c000b1450f5c5dd66c9fa43c602786a1bed164311b17a11900521f679"
+    },
+    "ale": {
+      "id": "ale",
+      "displayName": "Alessandro (Ale)",
+      "role": "kid",
+      "authType": "pin4",
+      "secretMd5": "25e95e98b024e8b502506007b2bb4dc7",
+      "secretHash": "ac05dc85bcc7ab7b461a3c9f029d602d40e271715b131474282cef104ee19d23"
+    },
+    "seby": {
+      "id": "seby",
+      "displayName": "Sebastian (Seby)",
+      "role": "kid",
+      "authType": "pin4",
+      "secretMd5": "b2486a0c46a84434ffde2c45c25b95b5",
+      "secretHash": "c1052cf2c1eba8d67b240680e47243cb13e5f43a05e4fcbb33f72206f02266e6"
+    },
+    "lucilla": {
+      "id": "lucilla",
+      "displayName": "Nonna Lucilla",
+      "role": "adult",
+      "authType": "password",
+      "secretMd5": "0cf77e476d15ef8a1a9fd2e370bf4f8f",
+      "secretHash": "01e66314c5c31aeda5ba8861abbbe79c31498fb76a31599cfd54c59f163c78d4"
+    },
+    "guest": {
+      "id": "guest",
+      "displayName": "Guest / Ospite",
+      "role": "guest",
+      "authType": "none",
+      "secretMd5": "",
+      "secretHash": ""
+    },
+    "saga": {
+      "id": "saga",
+      "displayName": "bot (Saga di Gemini UAT)",
+      "role": "bot",
+      "authType": "password",
+      "secretMd5": "e000aa67704291aed594d0daadf5c10a",
+      "secretHash": "5ac3918812d0e665b215336daca02dea39b9908ae3169b2cc2e7774c50706893"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Dots and Lines Deluxe (Dual Puffin)",
+  "short_name": "Dots & Lines",
+  "description": "Il classico gioco dei puntini e quadratini potenziato con Dual PuffinLogin (Ale vs Seby vs Papino Riccardo), neon VFX e combo musicali.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "icons": [
+    {
+      "src": "./assets/avatars/ale.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

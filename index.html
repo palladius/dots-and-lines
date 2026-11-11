@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dots and Lines Deluxe — Dual Puffin Edition</title>
+  <meta name="description" content="Dots and Lines Deluxe (Pipopipette Neon) con Doppio Login PuffinLogin (Ale vs Seby vs Papino Riccardo), effetti particellari neon, combo musicali e classifiche cloud." />
+  <meta name="theme-color" content="#05070d" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./assets/avatars/ale.png" />
+  <style>
+    :root {
+      --bg-deep: #05070d;
+      --bg-card: #0c101d;
+      --bg-board: #080b14;
+      --border-subtle: rgba(148, 163, 184, 0.16);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --p1-color: #EF4444;
+      --p1-glow: rgba(239, 68, 68, 0.45);
+      --p2-color: #3B82F6;
+      --p2-glow: rgba(59, 130, 246, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100dvh;
+      background: radial-gradient(circle at 50% 0%, #0f172a 0%, #05070d 72%);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    .app-shell {
+      max-width: 520px;
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: 0.65rem 0.85rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.55rem;
+    }
+
+    /* TOP BAR (Paolo style: Home / Lang left, Title center, Sound & HoF right) */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .top-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.38rem;
+    }
+
+    .circle-icon-btn,
+    .pill-top-btn {
+      background: rgba(15, 23, 42, 0.88);
+      color: #e2e8f0;
+      border: 1.5px solid rgba(148, 163, 184, 0.22);
+      border-radius: 999px;
+      height: 2.35rem;
+      min-width: 2.35rem;
+      padding: 0 0.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.14s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .circle-icon-btn:hover,
+    .pill-top-btn:hover {
+      border-color: rgba(250, 204, 21, 0.65);
+      background: rgba(30, 41, 59, 0.95);
+      transform: translateY(-1px);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin: 0;
+      background: linear-gradient(90deg, var(--p1-color, #22d3ee) 0%, #f8fafc 50%, var(--p2-color, #f43f5e) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* DUAL PLAYER SCOREBOARD & PUFFIN LOGIN CARDS */
+    .scoreboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+
+    .player-card {
+      position: relative;
+      background: rgba(12, 16, 29, 0.92);
+      border: 2px solid rgba(148, 163, 184, 0.18);
+      border-radius: 1.05rem;
+      padding: 0.55rem 0.7rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.38rem;
+      transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease;
+    }
+
+    .player-card.p1-card.is-active-turn {
+      border-color: var(--p1-color);
+      box-shadow: 0 0 22px var(--p1-glow), inset 0 0 14px rgba(255, 255, 255, 0.04);
+      transform: translateY(-1px);
+    }
+
+    .player-card.p2-card.is-active-turn {
+      border-color: var(--p2-color);
+      box-shadow: 0 0 22px var(--p2-glow), inset 0 0 14px rgba(255, 255, 255, 0.04);
+      transform: translateY(-1px);
+    }
+
+    .player-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+    }
+
+    .player-slot-tag {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+    }
+
+    .p1-card .player-slot-tag { color: var(--p1-color); }
+    .p2-card .player-slot-tag { color: var(--p2-color); }
+
+    .turn-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      opacity: 0.25;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .player-card.is-active-turn .turn-dot {
+      opacity: 1;
+      transform: scale(1.25);
+    }
+
+    .player-score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+
+    .player-login-slot {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .bot-badge-pill[hidden],
+    .combo-live-pill[hidden],
+    puffin-login[hidden] {
+      display: none !important;
+    }
+
+    .bot-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1.5px solid var(--p2-color);
+      border-radius: 999px;
+      padding: 0.22rem 0.58rem;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .player-login-slot puffin-login {
+      transform: scale(0.88);
+      transform-origin: left center;
+    }
+
+    .score-number {
+      font-size: 1.85rem;
+      font-weight: 900;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .p1-card.is-active-turn .score-number {
+      text-shadow: 0 0 16px var(--p1-color);
+    }
+
+    .p2-card.is-active-turn .score-number {
+      text-shadow: 0 0 16px var(--p2-color);
+    }
+
+    /* H2H RIVALRY & QUICK MATCHUP BAR */
+    .rivalry-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.45rem;
+      background: rgba(12, 16, 29, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 0.8rem;
+      padding: 0.36rem 0.65rem;
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      flex-wrap: wrap;
+    }
+
+    .rivalry-stats-text {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .mode-switch-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.28rem;
+    }
+
+    .mini-pill-btn {
+      background: rgba(30, 41, 59, 0.75);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 999px;
+      padding: 0.18rem 0.52rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mini-pill-btn.active,
+    .mini-pill-btn:hover {
+      background: rgba(250, 204, 21, 0.18);
+      color: #fde047;
+      border-color: rgba(250, 204, 21, 0.55);
+    }
+
+    /* SUBTITLE / COMBO BANNER */
+    .status-line {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      min-height: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      font-weight: 600;
+    }
+
+    .combo-live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: linear-gradient(90deg, rgba(250, 204, 21, 0.22), rgba(244, 63, 94, 0.22));
+      border: 1px solid rgba(250, 204, 21, 0.6);
+      color: #fde047;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      animation: pulseCombo 0.6s infinite alternate;
+    }
+
+    @keyframes pulseCombo {
+      from { transform: scale(0.97); }
+      to { transform: scale(1.05); }
+    }
+
+    /* BOARD CONTAINER */
+    .board-stage {
+      flex: 1;
+      min-height: 290px;
+      background: var(--bg-board);
+      border: 1.5px solid rgba(148, 163, 184, 0.14);
+      border-radius: 1.35rem;
+      box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.75), 0 12px 32px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #dots-canvas {
+      display: block;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    /* BOTTOM CONTROLS (Paolo style: ↩ Undo & ↻ New game) */
+    .bottom-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+
+    .bottom-pill-btn {
+      background: rgba(15, 23, 42, 0.9);
+      color: #e2e8f0;
+      border: 1.5px solid rgba(148, 163, 184, 0.2);
+      border-radius: 0.95rem;
+      padding: 0.72rem 1rem;
+      font-size: 0.92rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+
+    .bottom-pill-btn:hover:not(:disabled) {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: rgba(248, 250, 252, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .bottom-pill-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* START / RULES OVERLAY MODAL (Paolo's 01-start-rules screen) */
+    .overlay-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: radial-gradient(circle at 50% 15%, rgba(15, 23, 42, 0.98) 0%, rgba(5, 7, 13, 0.99) 75%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.15rem 1.35rem;
+      overflow-y: auto;
+    }
+
+    .overlay-screen[hidden] {
+      display: none !important;
+    }
+
+    .overlay-inner {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin: auto 0;
+    }
+
+    .hero-logo-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      text-align: center;
+    }
+
+    .neon-mini-grid-svg {
+      width: 68px;
+      height: 68px;
+      filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.35));
+    }
+
+    .hero-main-title {
+      font-size: 2.05rem;
+      font-weight: 900;
+      margin: 0;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, #22d3ee 0%, #f8fafc 48%, #f43f5e 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .rules-card {
+      background: rgba(12, 16, 29, 0.92);
+      border: 1.5px solid rgba(148, 163, 184, 0.16);
+      border-radius: 1.15rem;
+      padding: 0.9rem 1.05rem;
+    }
+
+    .rules-card h2 {
+      margin: 0 0 0.5rem;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .rules-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #94a3b8;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 0.32rem;
+    }
+
+    .setup-section-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    .grid-size-selector {
+      display: flex;
+      gap: 0.38rem;
+      flex-wrap: wrap;
+    }
+
+    .grid-option-btn {
+      flex: 1;
+      min-width: 3.4rem;
+      background: rgba(15, 23, 42, 0.9);
+      color: #cbd5e1;
+      border: 1.5px solid rgba(148, 163, 184, 0.22);
+      border-radius: 0.75rem;
+      padding: 0.45rem 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .grid-option-btn.active {
+      border-color: #22d3ee;
+      color: #ffffff;
+      background: rgba(34, 211, 238, 0.16);
+      box-shadow: 0 0 14px rgba(34, 211, 238, 0.28);
+    }
+
+    .cta-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-top: 0.2rem;
+    }
+
+    .cta-white-btn {
+      background: #f8fafc;
+      color: #05070d;
+      border: none;
+      border-radius: 999px;
+      padding: 0.88rem 1.2rem;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(248, 250, 252, 0.22);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .cta-white-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 28px rgba(248, 250, 252, 0.34);
+    }
+
+    .cta-dark-btn {
+      background: rgba(15, 23, 42, 0.92);
+      color: #f8fafc;
+      border: 1.5px solid rgba(148, 163, 184, 0.28);
+      border-radius: 999px;
+      padding: 0.82rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .cta-dark-btn:hover {
+      background: rgba(30, 41, 59, 0.98);
+      border-color: #f8fafc;
+    }
+
+    /* GAME OVER & HALL OF FAME DIALOG */
+    dialog#gameover-dialog {
+      width: min(94vw, 500px);
+      max-height: 90dvh;
+      background: #0b1021;
+      color: #f8fafc;
+      border: 2px solid rgba(250, 204, 21, 0.55);
+      border-radius: 1.35rem;
+      padding: 1.1rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+    }
+
+    dialog#gameover-dialog::backdrop {
+      background: rgba(3, 5, 11, 0.82);
+      backdrop-filter: blur(6px);
+    }
+
+    .winner-banner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .winner-avatar {
+      width: 4.4rem;
+      height: 4.4rem;
+      border-radius: 26%;
+      object-fit: cover;
+      object-position: center 22%;
+      border: 3px solid #facc15;
+      box-shadow: 0 0 24px rgba(250, 204, 21, 0.5);
+    }
+
+    .winner-title {
+      font-size: 1.45rem;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .winner-sub {
+      font-size: 0.86rem;
+      color: #cbd5e1;
+      margin: 0;
+    }
+
+    .modal-action-row {
+      display: flex;
+      gap: 0.55rem;
+      justify-content: center;
+      margin: 0.75rem 0 0.95rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <!-- START / RULES OVERLAY (Inspired by Paolo's 01-start-rules.jpg) -->
+  <section id="start-screen" class="overlay-screen" aria-label="Start and Rules">
+    <div class="top-bar" style="width:100%;max-width:440px;">
+      <button type="button" id="start-lang-btn" class="pill-top-btn" title="Switch Language EN / IT">
+        EN · <strong>it</strong>
+      </button>
+      <div class="top-btn-group">
+        <button type="button" id="start-hof-btn" class="circle-icon-btn" title="Hall of Fame">🏆</button>
+        <button type="button" id="start-sound-btn" class="circle-icon-btn" title="Toggle Sound">🔊</button>
+      </div>
+    </div>
+
+    <div class="overlay-inner">
+      <div class="hero-logo-box">
+        <svg class="neon-mini-grid-svg" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+          <rect x="14" y="14" width="24" height="24" rx="5" fill="rgba(239,68,68,0.28)" stroke="#EF4444" stroke-width="3.5"/>
+          <rect x="42" y="42" width="24" height="24" rx="5" fill="rgba(59,130,246,0.28)" stroke="#3B82F6" stroke-width="3.5"/>
+          <line x1="38" y1="14" x2="66" y2="14" stroke="#3B82F6" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="14" y1="38" x2="14" y2="66" stroke="#EF4444" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="4.5" fill="#f8fafc"/>
+          <circle cx="40" cy="14" r="4.5" fill="#f8fafc"/>
+          <circle cx="66" cy="14" r="4.5" fill="#f8fafc"/>
+          <circle cx="14" cy="40" r="4.5" fill="#f8fafc"/>
+          <circle cx="40" cy="40" r="4.5" fill="#f8fafc"/>
+          <circle cx="66" cy="40" r="4.5" fill="#f8fafc"/>
+          <circle cx="14" cy="66" r="4.5" fill="#f8fafc"/>
+          <circle cx="40" cy="66" r="4.5" fill="#f8fafc"/>
+          <circle cx="66" cy="66" r="4.5" fill="#f8fafc"/>
+        </svg>
+        <h1 class="hero-main-title">Dots and Lines</h1>
+        <p class="hero-subtitle" id="hero-subtitle-text">
+          Dual-Puffin Neon Edition • Ale 🐉 vs Seby 🏎️ vs Papino 👑
+        </p>
+      </div>
+
+      <div class="rules-card">
+        <h2>
+          <span id="rules-heading">Regole</span>
+          <span style="font-size:0.72rem;color:#38bdf8;font-weight:700;">🐧 Dual PuffinLogin v2.1</span>
+        </h2>
+        <ul class="rules-list" id="rules-list">
+          <li>Scorri (swipe) o tocca tra due puntini adiacenti per tracciare una linea neon.</li>
+          <li>Chiudi il 4° lato di un quadrato per conquistarlo con il tuo avatar e guadagnare un <strong>turno extra</strong>!</li>
+          <li>Incatena più quadrati di fila per attivare la <strong>Scala Musicale Combo (Do-Re-Mi-Fa-Sol!)</strong>.</li>
+        </ul>
+      </div>
+
+      <div>
+        <span class="setup-section-label" id="grid-label">Dimensione Griglia</span>
+        <div class="grid-size-selector" id="grid-selector">
+          <button type="button" class="grid-option-btn" data-grid="3x3">3×3</button>
+          <button type="button" class="grid-option-btn" data-grid="4x4">4×4</button>
+          <button type="button" class="grid-option-btn active" data-grid="4x5">4×5 ★</button>
+          <button type="button" class="grid-option-btn" data-grid="5x5">5×5</button>
+          <button type="button" class="grid-option-btn" data-grid="6x6">6×6</button>
+        </div>
+      </div>
+
+      <div class="cta-stack">
+        <button type="button" id="continue-game-btn" class="cta-white-btn" hidden>
+          CONTINUA PARTITA
+        </button>
+        <button type="button" id="start-new-game-btn" class="cta-dark-btn">
+          NUOVA PARTITA
+        </button>
+      </div>
+    </div>
+
+    <div style="font-size:0.7rem;color:#64748b;text-align:center;">
+      Ispirato al gioco di Paolo • Potenziato con Dual PuffinLogin &amp; Cloud Scores
+    </div>
+  </section>
+
+  <!-- MAIN GAMEPLAY SHELL (Inspired by Paolo's 02..04 screenshots + Dual PuffinLogin) -->
+  <main class="app-shell" id="game-shell">
+    <header class="top-bar">
+      <div class="top-btn-group">
+        <button type="button" id="home-btn" class="circle-icon-btn" title="Menu & Regole">⌂</button>
+        <button type="button" id="hud-lang-btn" class="pill-top-btn" title="Lingua EN / IT">IT</button>
+      </div>
+      <h1 class="brand-title">Dots and Lines</h1>
+      <div class="top-btn-group">
+        <button type="button" id="hud-hof-btn" class="circle-icon-btn" title="Top 10 Hall of Fame">🏆</button>
+        <button type="button" id="hud-sound-btn" class="circle-icon-btn" title="Audio ON/OFF">🔊</button>
+      </div>
+    </header>
+
+    <!-- DUAL PLAYER SCOREBOARD WITH INDEPENDENT <puffin-login> SLOTS (p1 & p2) -->
+    <section class="scoreboard-grid" aria-label="Dual Player Scoreboard">
+      <div class="player-card p1-card is-active-turn" id="p1-card">
+        <div class="player-card-top">
+          <span class="player-slot-tag">
+            <span class="turn-dot"></span>
+            <span id="p1-slot-label">PLAYER 1</span>
+          </span>
+          <span id="p1-combo-pill" style="font-size:0.68rem;color:#fca5a5;font-weight:800;"></span>
+        </div>
+        <div class="player-score-row">
+          <div class="player-login-slot">
+            <puffin-login
+              id="puffin-p1"
+              app-id="dots-and-lines"
+              player-slot="p1"
+              default-user="ale"
+              require-login="false"
+              compact
+              hide-quick-buttons
+            ></puffin-login>
+          </div>
+          <span class="score-number" id="p1-score">0</span>
+        </div>
+      </div>
+
+      <div class="player-card p2-card" id="p2-card">
+        <div class="player-card-top">
+          <span class="player-slot-tag">
+            <span class="turn-dot"></span>
+            <span id="p2-slot-label">PLAYER 2</span>
+          </span>
+          <span id="p2-combo-pill" style="font-size:0.68rem;color:#93c5fd;font-weight:800;"></span>
+        </div>
+        <div class="player-score-row">
+          <div class="player-login-slot" id="p2-login-container">
+            <puffin-login
+              id="puffin-p2"
+              app-id="dots-and-lines"
+              player-slot="p2"
+              default-user="seby"
+              require-login="false"
+              compact
+              hide-quick-buttons
+            ></puffin-login>
+            <div id="p2-bot-pill" class="bot-badge-pill" hidden>
+              🤖 <span>Bot CPU</span>
+            </div>
+          </div>
+          <span class="score-number" id="p2-score">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE HEAD-TO-HEAD RIVALRY & 2P / 1P-BOT MODE SWITCHER -->
+    <section class="rivalry-strip" aria-label="Head to Head Rivalry and Opponent Mode">
+      <div class="rivalry-stats-text" id="h2h-summary">
+        ⚔️ <span>Doppio Login: clicca i badge di P1 e P2!</span>
+      </div>
+      <div class="mode-switch-pills">
+        <button type="button" class="mini-pill-btn active" id="mode-2p-btn" title="2 Giocatori Umani (Doppio Login)">
+          👥 2P Dual
+        </button>
+        <button type="button" class="mini-pill-btn" id="mode-bot-btn" title="Gioca contro il Bot CPU">
+          🤖 vs Bot
+        </button>
+      </div>
+    </section>
+
+    <!-- INSTRUCTION / LIVE COMBO STATUS -->
+    <div class="status-line" id="status-line">
+      <span id="instruction-text">Scorri o tocca per unire • Annulla se serve</span>
+      <span id="live-combo-badge" class="combo-live-pill" hidden>🔥 COMBO x2</span>
+    </div>
+
+    <!-- NEON CANVAS BOARD -->
+    <div class="board-stage" id="board-stage">
+      <canvas id="dots-canvas"></canvas>
+    </div>
+
+    <!-- BOTTOM ACTION PILLS (Paolo's Undo & New Game) -->
+    <footer class="bottom-controls">
+      <button type="button" id="undo-btn" class="bottom-pill-btn" disabled>
+        ↩ <span id="undo-label">Annulla</span>
+      </button>
+      <button type="button" id="new-game-btn" class="bottom-pill-btn">
+        ↻ <span id="new-game-label">Nuova partita</span>
+      </button>
+    </footer>
+  </main>
+
+  <!-- GAME OVER + HALL OF FAME MODAL (Hidden during gameplay; revealed on Game Over or 🏆 click) -->
+  <dialog id="gameover-dialog">
+    <div class="winner-banner" id="winner-banner">
+      <img id="winner-avatar" class="winner-avatar" src="./assets/avatars/ale.png" alt="Winner" />
+      <h2 class="winner-title" id="winner-title">🏆 Vittoria!</h2>
+      <p class="winner-sub" id="winner-sub"></p>
+      <p class="winner-sub" id="winner-h2h-line" style="color:#fde047;font-weight:800;"></p>
+    </div>
+    <div class="modal-action-row">
+      <button type="button" id="play-again-btn" class="cta-white-btn" style="padding:0.6rem 1.2rem;font-size:0.85rem;">
+        ↻ Gioca Ancora
+      </button>
+      <button type="button" id="close-dialog-btn" class="cta-dark-btn" style="padding:0.6rem 1.1rem;font-size:0.82rem;">
+        Chiudi
+      </button>
+    </div>
+    <section id="hof-section">
+      <h3 style="margin:0 0 0.5rem;font-size:0.95rem;text-align:center;color:#fde047;">
+        🏆 Top 10 Hall of Fame — Dots &amp; Lines
+      </h3>
+      <puffin-leaderboard id="game-lb" filter-game="dots-and-lines"></puffin-leaderboard>
+    </section>
+  </dialog>
+
+  <script>
+    window.PUFFINLOGIN_ENV = {
+      appId: 'dots-and-lines',
+      apiUrl: 'https://puffin-login-932724269481.europe-west1.run.app/v1',
+      requireLogin: false
+    };
+  </script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
