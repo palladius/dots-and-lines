@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3] - 2026-11-12
+
+### Changed
+- **🤖👤 Minimalist Icons for BOT & Guest Mode**:
+  - Added clean geometric SVG icons (`assets/avatars/bot-simple.svg` in terminal green `#16A34A` and `assets/avatars/guest-simple.svg`) for CPU Bot and Guest / unauthenticated players.
+  - Updated `NeonBoardRenderer.js` (`_drawSimpleBotStamp` and `_drawSimpleGuestStamp`) to draw crisp vector robot and user silhouettes inside conquered boxes for Bot and Guest players, keeping full Pixar portrait medallions exclusively for logged-in family members (`ale`, `seby`, `riccardo`, `kate`, `lucilla`).
+
 ## [1.1.2] - 2026-11-12
 
 ### Changed

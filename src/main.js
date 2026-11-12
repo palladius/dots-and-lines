@@ -89,23 +89,25 @@ const COPY = {
 
 // Default distinct neon themes when a slot is unauthenticated or shares the same profile
 const FALLBACK_P1 = {
-  id: 'ale',
+  id: 'guest',
   shortName: 'Player 1',
   displayName: 'Player 1',
   colorHex: '#22D3EE', // Paolo's Cyan default when not logged in
   glowHex: 'rgba(34, 211, 238, 0.45)',
-  avatar: null, // Not logged in => color only, NO face (don't borrow Ale's avatar)
-  emoji: '⚡',
+  avatar: './assets/avatars/guest-simple.svg',
+  emoji: '👤',
+  iconKind: 'guest',
 };
 
 const FALLBACK_P2 = {
-  id: 'seby',
+  id: 'guest',
   shortName: 'Player 2',
   displayName: 'Player 2',
   colorHex: '#F43F5E', // Paolo's Magenta default when not logged in
   glowHex: 'rgba(244, 63, 94, 0.45)',
-  avatar: null, // Not logged in => color only, NO face (don't borrow Seby's avatar)
-  emoji: '🔥',
+  avatar: './assets/avatars/guest-simple.svg',
+  emoji: '👤',
+  iconKind: 'guest',
 };
 
 const CPU_BOT_PROFILE = {
@@ -114,8 +116,9 @@ const CPU_BOT_PROFILE = {
   displayName: 'Bot CPU 🤖',
   colorHex: '#16A34A', // Dark terminal-phosphor green (purple #A855F7 is Kate's color, don't clash!)
   glowHex: 'rgba(22, 163, 74, 0.45)',
-  avatar: './assets/avatars/saga.png',
+  avatar: './assets/avatars/bot-simple.svg',
   emoji: '🤖',
+  iconKind: 'bot',
 };
 
 class DotsAndLinesApp {
@@ -226,11 +229,19 @@ class DotsAndLinesApp {
       this.mode === '1p-bot' ? CPU_BOT_PROFILE : PuffinLogin.getCurrentUser('p2');
 
     const resolveAvatarUrl = (av, id) => {
+      if (id === 'cpu' || id === 'saga') return './assets/avatars/bot-simple.svg';
+      if (id === 'guest') return './assets/avatars/guest-simple.svg';
       const raw = String(av || '').trim();
-      if (!raw) return `./assets/avatars/${id || 'guest'}.png`;
+      if (!raw) return './assets/avatars/guest-simple.svg';
       if (raw.startsWith('http') || raw.startsWith('./') || raw.startsWith('/')) return raw;
       if (raw.startsWith('assets/')) return `./${raw}`;
       return `./assets/avatars/${raw}`;
+    };
+
+    const resolveIconKind = (id, isLogged) => {
+      if (id === 'cpu' || id === 'saga') return 'bot';
+      if (!isLogged || id === 'guest') return 'guest';
+      return 'family';
     };
 
     const p1 = u1
@@ -239,10 +250,11 @@ class DotsAndLinesApp {
           guest_name: u1.guest_name,
           name: u1.shortName || u1.displayName,
           shortName: u1.shortName || u1.displayName,
-          colorHex: u1.colorHex || '#EF4444',
-          glowHex: `${u1.colorHex || '#EF4444'}73`,
+          colorHex: u1.id === 'guest' ? '#22D3EE' : u1.colorHex || '#EF4444',
+          glowHex: `${u1.id === 'guest' ? '#22D3EE' : u1.colorHex || '#EF4444'}73`,
           avatar: resolveAvatarUrl(u1.avatar, u1.id),
-          emoji: u1.emoji || '🐉',
+          emoji: u1.id === 'guest' ? '👤' : u1.emoji || '🐉',
+          iconKind: resolveIconKind(u1.id, true),
           isLogged: true,
         }
       : {
@@ -257,10 +269,16 @@ class DotsAndLinesApp {
           guest_name: u2.guest_name,
           name: u2.shortName || u2.displayName,
           shortName: u2.shortName || u2.displayName,
-          colorHex: u2.colorHex || '#3B82F6',
-          glowHex: `${u2.colorHex || '#3B82F6'}73`,
+          colorHex: u2.id === 'guest' ? '#F43F5E' : u2.colorHex || '#3B82F6',
+          glowHex: `${u2.id === 'guest' ? '#F43F5E' : u2.colorHex || '#3B82F6'}73`,
           avatar: resolveAvatarUrl(u2.avatar, u2.id),
-          emoji: u2.emoji || '🏎️',
+          emoji:
+            u2.id === 'cpu'
+              ? '🤖'
+              : u2.id === 'guest'
+              ? '👤'
+              : u2.emoji || '🏎️',
+          iconKind: resolveIconKind(u2.id, true),
           isLogged: true,
         }
       : {
@@ -296,6 +314,30 @@ class DotsAndLinesApp {
         : p2.isLogged
         ? `P2 • ${p2.name}`
         : 'PLAYER 2';
+
+    // Use the simple minimalist SVG icon inside the <puffin-login> badge when logged in as Guest or Bot
+    const syncSlotBadgeSimpleIcon = (el, player) => {
+      const badgeImg =
+        el?.$badgeImg || el?.shadowRoot?.querySelector('.badge-avatar-img');
+      if (!badgeImg) return;
+      if (player.iconKind === 'guest') {
+        badgeImg.src = './assets/avatars/guest-simple.svg';
+        badgeImg.style.filter = 'none';
+        badgeImg.style.objectFit = 'contain';
+        badgeImg.style.objectPosition = 'center';
+      } else if (player.iconKind === 'bot') {
+        badgeImg.src = './assets/avatars/bot-simple.svg';
+        badgeImg.style.filter = 'none';
+        badgeImg.style.objectFit = 'contain';
+        badgeImg.style.objectPosition = 'center';
+      } else {
+        badgeImg.style.filter = '';
+        badgeImg.style.objectFit = '';
+        badgeImg.style.objectPosition = '';
+      }
+    };
+    syncSlotBadgeSimpleIcon(this.$puffinP1, p1);
+    syncSlotBadgeSimpleIcon(this.$puffinP2, p2);
 
     if (this.mode === '1p-bot') {
       this.$puffinP2.hidden = true;
