@@ -94,7 +94,7 @@ const FALLBACK_P1 = {
   displayName: 'Player 1',
   colorHex: '#22D3EE', // Paolo's Cyan default when not logged in
   glowHex: 'rgba(34, 211, 238, 0.45)',
-  avatar: './assets/avatars/ale.png',
+  avatar: null, // Not logged in => color only, NO face (don't borrow Ale's avatar)
   emoji: '⚡',
 };
 
@@ -104,7 +104,7 @@ const FALLBACK_P2 = {
   displayName: 'Player 2',
   colorHex: '#F43F5E', // Paolo's Magenta default when not logged in
   glowHex: 'rgba(244, 63, 94, 0.45)',
-  avatar: './assets/avatars/seby.png',
+  avatar: null, // Not logged in => color only, NO face (don't borrow Seby's avatar)
   emoji: '🔥',
 };
 
@@ -112,8 +112,8 @@ const CPU_BOT_PROFILE = {
   id: 'cpu',
   shortName: 'Bot CPU',
   displayName: 'Bot CPU 🤖',
-  colorHex: '#A855F7',
-  glowHex: 'rgba(168, 85, 247, 0.45)',
+  colorHex: '#22C55E', // Neon green: purple #A855F7 is Kate's color, don't clash!
+  glowHex: 'rgba(34, 197, 94, 0.45)',
   avatar: './assets/avatars/saga.png',
   emoji: '🤖',
 };
@@ -135,12 +135,27 @@ class DotsAndLinesApp {
     });
 
     this._bindUiEvents();
+    this._syncAppVersion();
     this.syncPlayersFromPuffin();
     this.applyLanguage();
     this.syncSoundButtons();
     this.startNewGame(this.gridKey, false);
 
     window.addEventListener('resize', () => this.renderer.resize());
+  }
+
+  _syncAppVersion() {
+    fetch('./VERSION', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.text() : ''))
+      .then((txt) => {
+        const clean = String(txt || '').trim();
+        if (clean) {
+          document.querySelectorAll('.app-version-label').forEach((el) => {
+            el.textContent = clean;
+          });
+        }
+      })
+      .catch(() => {});
   }
 
   _cacheDom() {
@@ -564,7 +579,9 @@ class DotsAndLinesApp {
     this.sound.playVictoryFanfare(isTie);
 
     this.$winnerBanner.hidden = false;
-    this.$winnerAvatar.src = isTie ? p1.avatar : winnerPlayer.avatar;
+    const winnerAvatarSrc = isTie ? p1.avatar : winnerPlayer.avatar;
+    this.$winnerAvatar.hidden = !winnerAvatarSrc; // unlogged => no face
+    if (winnerAvatarSrc) this.$winnerAvatar.src = winnerAvatarSrc;
     this.$winnerAvatar.style.borderColor = isTie ? '#facc15' : winnerPlayer.colorHex;
     this.$winnerTitle.textContent = isTie
       ? tr.tieTitle

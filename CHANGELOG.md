@@ -7,6 +7,21 @@
   - Tracked exact elapsed time per move (`moveTimesMs.p1` and `moveTimesMs.p2`, undo-safe via `cloneBoardSnapshot`) and added [`getMoveTimeStats`](file:///Users/riccardo/git/dots-and-lines/src/core/DotsEngine.js) in `src/core/DotsEngine.js`.
   - Added side-by-side **Ale vs Seby** move timing cards (`#winner-timing-stats`) in the Game Over modal showing **Tempo Medio / mossa** (`⏱️ Media/mossa`) and **Tempo Max / mossa** (`🐢 Max/mossa`) plus total moves for each player.
   - Enriched `PuffinLogin.submitDualMatchScore` and `validateAndNormalizeScorePayload` (`src/puffin-login.js`) so the final high-score telemetry JSON includes `avg_move_ms`, `max_move_ms`, `avg_move_sec`, `max_move_sec`, `player_moves`, `opponent_avg_move_ms`, `opponent_max_move_ms`, and `move_timing: { p1, p2 }`.
+- **🏷️ Visible App Version Badge**: added the live app version (`v1.1.0`, synced from `./VERSION`) to the Start/Rules screen and gameplay header.
+
+## [1.0.3] - 2026-11-12
+
+### Fixed
+- **🃏 "✨ Riscatta Carta!" button did nothing over the Hall of Fame**:
+  - Root cause: `<dialog id="gameover-dialog">.showModal()` makes everything outside the dialog `inert` (even Top-Layer popovers), so every button on the card reveal toast (Riscatta, ✖, Album, Gira) silently ignored clicks.
+  - `showPuffinCardRevealToast()` in `src/puffin-cards.js` now mounts the toast host inside the topmost open modal `<dialog>` and follows dialogs as they open/close (moving back to `<body>` when they close).
+  - Redeeming is always "yes": the card is already saved to the Album when it unlocks. The button now shows `✅ Riscattata! Nel tuo Album`, fires a `puffin-card-claimed` event and then closes.
+
+## [1.0.2] - 2026-11-12
+
+### Fixed
+- **🙈 No borrowed faces for unlogged players**: when P1/P2 are NOT logged in, conquered boxes now show only the neon slot color (cyan / magenta) — no more Ale/Seby Pixar faces stamped inside. `FALLBACK_P1/P2.avatar` is now `null`, `NeonBoardRenderer` skips the stamp when `isLogged === false`, and the winner banner hides the avatar image for unlogged winners.
+- **💚 Bot CPU color**: changed from purple `#A855F7` (clashed with Kate's profile color) to neon green `#22C55E`, a color no family profile uses.
 
 ## [1.0.1] - 2026-11-12
 
