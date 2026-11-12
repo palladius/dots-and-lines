@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2] - 2026-11-12
+
+### Fixed
+- **🙈 No borrowed faces for unlogged players**: when P1/P2 are NOT logged in, conquered boxes now show only the neon slot color (cyan / magenta) — no more Ale/Seby Pixar faces stamped inside. `FALLBACK_P1/P2.avatar` is now `null`, `NeonBoardRenderer` skips the stamp when `isLogged === false`, and the winner banner hides the avatar image for unlogged winners.
+- **💚 Bot CPU color**: changed from purple `#A855F7` (clashed with Kate's profile color) to neon green `#22C55E`, a color no family profile uses.
+
 ## [1.0.1] - 2026-11-12
 
 ### Fixed

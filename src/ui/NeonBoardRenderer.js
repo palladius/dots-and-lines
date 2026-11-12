@@ -438,10 +438,14 @@ export class NeonBoardRenderer {
         ctx.fill();
         ctx.stroke();
 
-        // Player Pixar avatar medallion or initial stamp inside conquered box
-        const avatarImg = this.avatarImages.get(pInfo.avatar);
+        // Player Pixar avatar medallion or initial stamp inside conquered box.
+        // Unlogged players (isLogged === false) => plain neon color only, NO face/stamp.
+        const showStamp = pInfo.isLogged !== false;
+        const avatarImg = pInfo.avatar ? this.avatarImages.get(pInfo.avatar) : null;
         const stampRadius = Math.max(10, Math.min(22, boxSize * 0.34));
-        if (avatarImg && avatarImg.complete && avatarImg.naturalWidth > 0) {
+        if (!showStamp) {
+          // color-only box, nothing to draw
+        } else if (avatarImg && avatarImg.complete && avatarImg.naturalWidth > 0) {
           ctx.save();
           ctx.beginPath();
           ctx.arc(0, 0, stampRadius, 0, Math.PI * 2);
