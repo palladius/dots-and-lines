@@ -3276,6 +3276,88 @@ export function showPuffinCardRevealToast({
       from { transform: translateY(22px) scale(0.88); opacity: 0; }
       to { transform: translateY(0) scale(1); opacity: 1; }
     }
+
+    /* ✨ "Riscatta Carta!" claim feedback: spinner -> card flies into the Album -> green success */
+    .reveal-cta-btn.primary:disabled { cursor: progress; }
+    .reveal-cta-btn.primary.is-claiming {
+      filter: brightness(1.05);
+      animation: claimBtnPulse 0.7s ease-in-out infinite;
+    }
+    .reveal-cta-btn.primary.is-claimed {
+      background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+      border-color: #bbf7d0;
+      color: #052e16;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.25), 0 8px 24px rgba(34, 197, 94, 0.55);
+      animation: claimBtnPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .claim-spinner {
+      display: inline-block;
+      width: 0.95em;
+      height: 0.95em;
+      margin-right: 0.4em;
+      vertical-align: -0.15em;
+      border: 2.5px solid rgba(15, 23, 42, 0.25);
+      border-top-color: #0f172a;
+      border-radius: 50%;
+      animation: claimSpin 0.65s linear infinite;
+    }
+    .reveal-toast-wrap.is-claiming .mtg-card-scene {
+      animation: claimCardGlow 0.7s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .reveal-toast-wrap.is-claiming .reveal-cta-btn.secondary,
+    .reveal-toast-wrap.is-claiming #flip-toast-card,
+    .reveal-toast-wrap.is-claiming #close-toast {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .reveal-toast-wrap.is-closing {
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      opacity: 0;
+      transform: scale(0.94);
+    }
+    #open-album-toast-btn.is-receiving {
+      animation: claimAlbumBump 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background: rgba(250, 204, 21, 0.35);
+      border-color: #fde047;
+      color: #fff;
+    }
+    .claim-sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      margin: -4px 0 0 -4px;
+      border-radius: 50%;
+      background: #fde047;
+      box-shadow: 0 0 10px #facc15;
+      pointer-events: none;
+      z-index: 5;
+    }
+    @keyframes claimSpin { to { transform: rotate(360deg); } }
+    @keyframes claimBtnPulse {
+      0%, 100% { box-shadow: 0 6px 18px rgba(250, 204, 21, 0.35); }
+      50% { box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.28), 0 8px 26px rgba(250, 204, 21, 0.7); }
+    }
+    @keyframes claimBtnPop {
+      0% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+    @keyframes claimCardGlow {
+      0%, 100% { filter: drop-shadow(0 0 0 rgba(250, 204, 21, 0)); transform: scale(1); }
+      50% { filter: drop-shadow(0 0 18px rgba(250, 204, 21, 0.9)); transform: scale(1.025); }
+    }
+    @keyframes claimAlbumBump {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.35) rotate(-6deg); }
+      100% { transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal-cta-btn.primary.is-claiming,
+      .reveal-toast-wrap.is-claiming .mtg-card-scene,
+      .reveal-cta-btn.primary.is-claimed,
+      #open-album-toast-btn.is-receiving { animation: none; }
+      .claim-spinner { animation-duration: 1.4s; }
+    }
   `;
   shadow.append(style);
 
@@ -3358,13 +3440,26 @@ export function showPuffinCardRevealToast({
   };
   mountHost({ forcePromote: true });
 
-  // Re-promote after any <dialog>.showModal() (e.g. Hall of Fame on Game Over!) ...
+  // Follow modal <dialog>s the instant they open/close (e.g. Hall of Fame on Game Over, PLAY AGAIN / CLOSE):
+  // `showModal()` toggles the `open` attribute, so a MutationObserver re-mounts us in the same task,
+  // leaving no window where the toast is inert and clicks get swallowed.
+  let dialogObserver = null;
+  if (typeof MutationObserver !== 'undefined') {
+    dialogObserver = new MutationObserver(() => {
+      if (host.isConnected) mountHost();
+    });
+    dialogObserver.observe(document.documentElement, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['open'],
+    });
+  }
+  // Belt & braces fallback (no forced hide/show: that restarted the entry animation and made the toast flicker).
   const repromoteTimers = [80, 260, 650, 1200].map((ms) =>
     setTimeout(() => {
-      if (host.isConnected) mountHost({ forcePromote: true });
+      if (host.isConnected) mountHost();
     }, ms)
   );
-  // ... and keep following modal dialogs opened/closed later (e.g. HoF button, PLAY AGAIN / CLOSE).
   const mountWatcher = setInterval(() => {
     if (!host.isConnected) {
       clearInterval(mountWatcher);
@@ -3413,6 +3508,7 @@ export function showPuffinCardRevealToast({
   const cleanupAndClose = () => {
     repromoteTimers.forEach((t) => clearTimeout(t));
     clearInterval(mountWatcher);
+    dialogObserver?.disconnect();
     stopMythicCardMusic();
     try {
       if (typeof host.hidePopover === 'function' && host.matches(':popover-open')) {
@@ -3426,21 +3522,108 @@ export function showPuffinCardRevealToast({
     e.stopPropagation();
     cleanupAndClose();
   });
+
   // Redeem is ALWAYS "yes": the card is already persisted in the Album by `unlockCard()` before this
-  // toast shows (✖, auto-dock or closing the Hall of Fame never lose it). This button just confirms.
+  // toast shows (✖, auto-dock or closing the Hall of Fame never lose it). This button confirms it with
+  // instant, unmistakable feedback: spinner -> card flies into 🃏 Album with sparkles -> green ✅ -> close.
   const claimBtn = box.querySelector('#claim-toast-btn');
+  const albumBtn = box.querySelector('#open-album-toast-btn');
+  const reducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const burstSparkles = (x, y) => {
+    const colors = ['#fde047', '#facc15', '#ffffff', '#4ade80', '#f472b6'];
+    for (let i = 0; i < 14; i++) {
+      const s = document.createElement('span');
+      s.className = 'claim-sparkle';
+      s.style.left = `${x}px`;
+      s.style.top = `${y}px`;
+      s.style.background = colors[i % colors.length];
+      box.appendChild(s);
+      const angle = (Math.PI * 2 * i) / 14;
+      const dist = 26 + Math.random() * 30;
+      s.animate(
+        [
+          { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+          { transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) scale(0.2)`, opacity: 0 },
+        ],
+        { duration: 650, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
+      ).onfinish = () => s.remove();
+    }
+  };
+
+  const flyCardIntoAlbum = () => {
+    if (!sceneEl || !albumBtn || typeof sceneEl.animate !== 'function') return null;
+    const from = sceneEl.getBoundingClientRect();
+    const to = albumBtn.getBoundingClientRect();
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    sceneEl.style.animation = 'none'; // stop the glow pulse so the flight transform wins
+    return sceneEl.animate(
+      [
+        { transform: 'translate(0, 0) scale(1) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${dx * 0.35}px, ${dy * 0.35 - 30}px) scale(0.7) rotate(-6deg)`, opacity: 1, offset: 0.4 },
+        { transform: `translate(${dx}px, ${dy}px) scale(0.06) rotate(-14deg)`, opacity: 0.2 },
+      ],
+      { duration: 620, easing: 'cubic-bezier(0.55, 0, 0.35, 1)', fill: 'forwards' }
+    );
+  };
+
   claimBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     if (claimBtn.disabled) return;
+    // 1. INSTANT feedback (same frame as the click)
     claimBtn.disabled = true;
-    claimBtn.textContent = '✅ Riscattata! Nel tuo Album';
+    claimBtn.classList.add('is-claiming');
+    claimBtn.innerHTML = '<span class="claim-spinner" aria-hidden="true"></span>Riscatto in corso…';
+    claimBtn.setAttribute('aria-busy', 'true');
+    box.classList.add('is-claiming');
+    repromoteTimers.forEach((t) => clearTimeout(t)); // never hide/show the popover mid-animation
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('puffin-card-claimed', { detail: { card, ownership } }));
     }
-    setTimeout(cleanupAndClose, 650);
+
+    const showSuccess = () => {
+      claimBtn.classList.remove('is-claiming');
+      claimBtn.classList.add('is-claimed');
+      claimBtn.removeAttribute('aria-busy');
+      claimBtn.textContent = '✅ Riscattata! Nel tuo Album';
+    };
+    const fadeOutAndClose = (delayMs) =>
+      setTimeout(() => {
+        box.classList.add('is-closing');
+        setTimeout(cleanupAndClose, 230);
+      }, delayMs);
+
+    if (reducedMotion) {
+      setTimeout(showSuccess, 350);
+      fadeOutAndClose(1100);
+      return;
+    }
+
+    // 2. Card glows & pulses for a beat, then 3. flies into the 🃏 Album button with a sparkle burst
+    setTimeout(() => {
+      const flight = flyCardIntoAlbum();
+      const land = () => {
+        if (albumBtn) {
+          const a = albumBtn.getBoundingClientRect();
+          const b = box.getBoundingClientRect();
+          burstSparkles(a.left - b.left + a.width / 2, a.top - b.top + a.height / 2);
+          albumBtn.classList.add('is-receiving');
+        }
+        // 4. Green success state, then fade out
+        showSuccess();
+        fadeOutAndClose(800);
+      };
+      if (flight) flight.onfinish = land;
+      else land();
+    }, 450);
   });
-  box.querySelector('#open-album-toast-btn')?.addEventListener('click', (e) => {
+  albumBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (box.classList.contains('is-claiming')) return;
     cleanupAndClose();
     if (typeof window !== 'undefined' && window.PuffinLogin && typeof window.PuffinLogin.openCards === 'function') {
       window.PuffinLogin.openCards({ gameId: card.game_id });
@@ -3451,7 +3634,7 @@ export function showPuffinCardRevealToast({
 
   // After 9s in center Hero mode, gently dock beside the Hall of Fame instead of disappearing abruptly!
   setTimeout(() => {
-    if (host.isConnected && !stage.classList.contains('is-docked')) {
+    if (host.isConnected && !stage.classList.contains('is-docked') && !box.classList.contains('is-claiming')) {
       stage.classList.add('is-docked');
       if (dockBtn) dockBtn.textContent = '🔍 Ingrandisci al Centro';
     }

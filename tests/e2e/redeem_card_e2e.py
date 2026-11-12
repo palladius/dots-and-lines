@@ -129,18 +129,36 @@ def run(url: str, browser_name: str, headed: bool, shots: Path) -> int:
         page.wait_for_timeout(1500)  # let re-promote timers / animations settle, like a human would
         page.screenshot(path=str(shots / f"01-before-claim-{browser_name}.png"))
 
-        # 4. REAL mouse click on "Riscatta Carta!"
+        # 4. REAL mouse click on "Riscatta Carta!" -> instant feedback, fly-to-Album animation, success, close
         real_click(page, claim, "✨ Riscatta Carta!")
-        page.wait_for_timeout(150)
-        label = claim.text_content().strip() if toast.count() else "(toast already gone)"
-        log(f"button label after click: {label!r}")
-        page.screenshot(path=str(shots / f"02-after-claim-{browser_name}.png"))
+        t_click = time.time()
+        page.wait_for_function(
+            f"""() => {{ const t = document.querySelector('{TOAST}'); const b = t && t.shadowRoot.getElementById('claim-toast-btn');
+                return !t || (b && (b.classList.contains('is-claiming') || b.classList.contains('is-claimed'))); }}""",
+            timeout=2000,
+            polling=10,
+        )
+        feedback_ms = (time.time() - t_click) * 1000
+        busy_label = claim.text_content().strip() if toast.count() else "(toast already gone)"
+        log(f"feedback after {feedback_ms:.0f} ms: {busy_label!r}")
+        page.screenshot(path=str(shots / f"02-claiming-{browser_name}.png"))
+        page.wait_for_timeout(450)
+        page.screenshot(path=str(shots / f"03-flying-{browser_name}.png"))
+        page.wait_for_function(
+            f"""() => {{ const t = document.querySelector('{TOAST}'); const b = t && t.shadowRoot.getElementById('claim-toast-btn');
+                return b && b.textContent.includes('✅'); }}""",
+            timeout=3000,
+            polling=20,
+        )
+        label = claim.text_content().strip()
+        log(f"success label after {(time.time() - t_click) * 1000:.0f} ms: {label!r}")
+        page.screenshot(path=str(shots / f"04-claimed-{browser_name}.png"))
         try:
             toast.wait_for(state="detached", timeout=3000)
             closed = True
         except Exception:
             closed = False
-        log(f"toast closed after claim: {closed}")
+        log(f"toast closed after claim: {closed} ({(time.time() - t_click) * 1000:.0f} ms after click)")
 
         # 5. Card is in the Album
         in_album = page.evaluate(
@@ -154,7 +172,7 @@ def run(url: str, browser_name: str, headed: bool, shots: Path) -> int:
             log(f"page errors: {errors}")
         browser.close()
 
-    ok = bool(closed and label.startswith("✅") and in_album)
+    ok = bool(closed and label.startswith("✅") and in_album and feedback_ms < 300)
     log("✅ PASS" if ok else "❌ FAIL")
     return 0 if ok else 1
 

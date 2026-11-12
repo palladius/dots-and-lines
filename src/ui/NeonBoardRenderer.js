@@ -486,29 +486,18 @@ export class NeonBoardRenderer {
     }
 
     // 3. Hover / Swipe Preview Segment = "GHOST" move (not played yet!)
-    // Must NEVER look like a real move: real moves are solid + neon glow,
-    // the ghost is dashed, thinner, glow-less, white-outlined, with marching ants.
+    // Real moves are solid + neon glow; the ghost is ONLY a plain dashed line
+    // in the player's color (no glow, no white outline, no animation: keep it sober).
     if (this.pointer.hoverSegment && !this.state.isGameOver) {
       const seg = this.pointer.hoverSegment;
       const activeP = this.players[this.state.currentTurn] || this.players.p1;
       const coords = this._getSegmentEndpoints(seg.type, seg.r, seg.c);
-      const dash = [Math.max(6, step * 0.12), Math.max(5, step * 0.09)];
-      const march = -(now * 0.03) % (dash[0] + dash[1]);
       ctx.save();
       ctx.shadowBlur = 0;
-      ctx.lineCap = 'butt';
-      ctx.setLineDash(dash);
-      ctx.lineDashOffset = march;
-      // White dashed outline
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = Math.max(5, step * 0.085);
-      ctx.beginPath();
-      ctx.moveTo(coords.x1, coords.y1);
-      ctx.lineTo(coords.x2, coords.y2);
-      ctx.stroke();
-      // Player-colored dashed inner stripe
-      ctx.strokeStyle = activeP.colorHex;
-      ctx.lineWidth = Math.max(2.5, step * 0.045);
+      ctx.lineCap = 'round';
+      ctx.setLineDash([Math.max(6, step * 0.11), Math.max(6, step * 0.1)]);
+      ctx.strokeStyle = hexToRgba(activeP.colorHex, 0.9);
+      ctx.lineWidth = Math.max(4, step * 0.07);
       ctx.beginPath();
       ctx.moveTo(coords.x1, coords.y1);
       ctx.lineTo(coords.x2, coords.y2);
