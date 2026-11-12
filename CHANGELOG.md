@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.2] - 2026-11-12
+
+### Changed
+- **👻 Sober ghost preview**: simplified the not-yet-played move preview to a plain dashed line in the player's color (removed white outline and marching-ants animation, judged too flashy).
+
 ## [1.1.1] - 2026-11-12
 
 ### Changed
