@@ -434,7 +434,9 @@ class DotsAndLinesApp {
     document.getElementById('grid-label').textContent = tr.gridLabel;
     this.$continueBtn.textContent = tr.continueBtn;
     this.$startNewBtn.textContent = tr.newGameBtnStart;
-    this.$instructionText.textContent = tr.instruction;
+    if (this.$instructionText) {
+      this.$instructionText.textContent = tr.instruction;
+    }
     document.getElementById('undo-label').textContent = tr.undoBtn;
     document.getElementById('new-game-label').textContent = tr.newGameBtn;
     this.$playAgainBtn.textContent = tr.playAgainBtn;
@@ -443,8 +445,8 @@ class DotsAndLinesApp {
     this.$gridSelector.querySelectorAll('[data-grid]').forEach((b) => {
       b.classList.toggle('active', b.getAttribute('data-grid') === this.gridKey);
     });
-    this.$mode2pBtn.classList.toggle('active', this.mode === '2p-local');
-    this.$modeBotBtn.classList.toggle('active', this.mode === '1p-bot');
+    if (this.$mode2pBtn) this.$mode2pBtn.classList.toggle('active', this.mode === '2p-local');
+    if (this.$modeBotBtn) this.$modeBotBtn.classList.toggle('active', this.mode === '1p-bot');
   }
 
   syncSoundButtons() {
@@ -511,17 +513,30 @@ class DotsAndLinesApp {
     this.$p1Card.classList.toggle('is-active-turn', !this.state.isGameOver && this.state.currentTurn === 'p1');
     this.$p2Card.classList.toggle('is-active-turn', !this.state.isGameOver && this.state.currentTurn === 'p2');
 
-    this.$p1ComboPill.textContent =
-      this.state.maxCombo.p1 >= 2 ? `Max ${this.state.maxCombo.p1}x` : '';
-    this.$p2ComboPill.textContent =
-      this.state.maxCombo.p2 >= 2 ? `Max ${this.state.maxCombo.p2}x` : '';
+    const solfege =
+      this.state.currentCombo >= 2 ? this.sound.getSolfegeLabel(this.state.currentCombo) : '';
 
-    if (this.state.currentCombo >= 2) {
-      const solfege = this.sound.getSolfegeLabel(this.state.currentCombo);
-      this.$liveComboBadge.hidden = false;
-      this.$liveComboBadge.textContent = `🔥 COMBO x${this.state.currentCombo} — ${solfege}`;
+    if (this.state.currentTurn === 'p1' && this.state.currentCombo >= 2) {
+      this.$p1ComboPill.textContent = `🔥 x${this.state.currentCombo} ${solfege}`;
     } else {
-      this.$liveComboBadge.hidden = true;
+      this.$p1ComboPill.textContent =
+        this.state.maxCombo.p1 >= 2 ? `Max ${this.state.maxCombo.p1}x` : '';
+    }
+
+    if (this.state.currentTurn === 'p2' && this.state.currentCombo >= 2) {
+      this.$p2ComboPill.textContent = `🔥 x${this.state.currentCombo} ${solfege}`;
+    } else {
+      this.$p2ComboPill.textContent =
+        this.state.maxCombo.p2 >= 2 ? `Max ${this.state.maxCombo.p2}x` : '';
+    }
+
+    if (this.$liveComboBadge) {
+      if (this.state.currentCombo >= 2) {
+        this.$liveComboBadge.hidden = false;
+        this.$liveComboBadge.textContent = `🔥 COMBO x${this.state.currentCombo} — ${solfege}`;
+      } else {
+        this.$liveComboBadge.hidden = true;
+      }
     }
 
     this.$undoBtn.disabled = this.state.history.length === 0;

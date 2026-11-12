@@ -31,37 +31,45 @@
       margin: 0;
       padding: 0;
       width: 100%;
-      min-height: 100dvh;
+      height: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
       background: radial-gradient(circle at 50% 0%, #0f172a 0%, #05070d 72%);
       color: var(--text-main);
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      overflow-x: hidden;
+      overflow: hidden;
+      overscroll-behavior: none;
       user-select: none;
     }
 
     .app-shell {
       max-width: 520px;
-      min-height: 100dvh;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
       margin: 0 auto;
-      padding: 0.65rem 0.85rem 0.9rem;
+      padding: calc(0.42rem + env(safe-area-inset-top, 0px)) 0.72rem calc(0.52rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 0.55rem;
+      gap: 0.42rem;
+      overflow: hidden;
     }
 
     /* TOP BAR (Paolo style: Home / Lang left, Title center, Sound & HoF right) */
     .top-bar {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
     .top-btn-group {
       display: flex;
       align-items: center;
-      gap: 0.38rem;
+      gap: 0.32rem;
     }
 
     .circle-icon-btn,
@@ -70,14 +78,14 @@
       color: #e2e8f0;
       border: 1.5px solid rgba(148, 163, 184, 0.22);
       border-radius: 999px;
-      height: 2.35rem;
-      min-width: 2.35rem;
-      padding: 0 0.65rem;
+      height: 2.1rem;
+      min-width: 2.1rem;
+      padding: 0 0.55rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.3rem;
-      font-size: 0.82rem;
+      gap: 0.25rem;
+      font-size: 0.78rem;
       font-weight: 800;
       cursor: pointer;
       transition: transform 0.14s ease, border-color 0.18s ease, background 0.18s ease;
@@ -91,7 +99,7 @@
     }
 
     .brand-title {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 900;
       letter-spacing: -0.02em;
       margin: 0;
@@ -105,58 +113,57 @@
 
     /* DUAL PLAYER SCOREBOARD & PUFFIN LOGIN CARDS */
     .scoreboard-grid {
+      flex-shrink: 0;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
+      gap: 0.5rem;
     }
 
     .player-card {
       position: relative;
       background: rgba(12, 16, 29, 0.92);
       border: 2px solid rgba(148, 163, 184, 0.18);
-      border-radius: 1.05rem;
-      padding: 0.55rem 0.7rem;
+      border-radius: 0.95rem;
+      padding: 0.35rem 0.55rem;
       display: flex;
       flex-direction: column;
-      gap: 0.38rem;
+      gap: 0.18rem;
       transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease;
     }
 
     .player-card.p1-card.is-active-turn {
       border-color: var(--p1-color);
-      box-shadow: 0 0 22px var(--p1-glow), inset 0 0 14px rgba(255, 255, 255, 0.04);
-      transform: translateY(-1px);
+      box-shadow: 0 0 18px var(--p1-glow), inset 0 0 12px rgba(255, 255, 255, 0.04);
     }
 
     .player-card.p2-card.is-active-turn {
       border-color: var(--p2-color);
-      box-shadow: 0 0 22px var(--p2-glow), inset 0 0 14px rgba(255, 255, 255, 0.04);
-      transform: translateY(-1px);
+      box-shadow: 0 0 18px var(--p2-glow), inset 0 0 12px rgba(255, 255, 255, 0.04);
     }
 
     .player-card-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.35rem;
+      gap: 0.25rem;
     }
 
     .player-slot-tag {
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       font-weight: 900;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       display: inline-flex;
       align-items: center;
-      gap: 0.32rem;
+      gap: 0.28rem;
     }
 
     .p1-card .player-slot-tag { color: var(--p1-color); }
     .p2-card .player-slot-tag { color: var(--p2-color); }
 
     .turn-dot {
-      width: 0.5rem;
-      height: 0.5rem;
+      width: 0.44rem;
+      height: 0.44rem;
       border-radius: 50%;
       background: currentColor;
       box-shadow: 0 0 8px currentColor;
@@ -173,7 +180,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.4rem;
+      gap: 0.3rem;
     }
 
     .player-login-slot {
@@ -192,23 +199,23 @@
     .bot-badge-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.3rem;
       background: rgba(15, 23, 42, 0.92);
       border: 1.5px solid var(--p2-color);
       border-radius: 999px;
-      padding: 0.22rem 0.58rem;
-      font-size: 0.76rem;
+      padding: 0.18rem 0.5rem;
+      font-size: 0.72rem;
       font-weight: 800;
       color: #f8fafc;
     }
 
     .player-login-slot puffin-login {
-      transform: scale(0.88);
+      transform: scale(0.84);
       transform-origin: left center;
     }
 
     .score-number {
-      font-size: 1.85rem;
+      font-size: 1.6rem;
       font-weight: 900;
       line-height: 1;
       font-variant-numeric: tabular-nums;
@@ -224,7 +231,7 @@
       text-shadow: 0 0 16px var(--p2-color);
     }
 
-    /* H2H RIVALRY & QUICK MATCHUP BAR */
+    /* H2H RIVALRY & MODE SWITCHER (Inside Menu / Start Overlay) */
     .rivalry-strip {
       display: flex;
       align-items: center;
@@ -233,7 +240,7 @@
       background: rgba(12, 16, 29, 0.82);
       border: 1px solid rgba(148, 163, 184, 0.16);
       border-radius: 0.8rem;
-      padding: 0.36rem 0.65rem;
+      padding: 0.4rem 0.65rem;
       font-size: 0.74rem;
       color: #cbd5e1;
       flex-wrap: wrap;
@@ -249,7 +256,7 @@
     .mode-switch-pills {
       display: flex;
       align-items: center;
-      gap: 0.28rem;
+      gap: 0.35rem;
     }
 
     .mini-pill-btn {
@@ -257,8 +264,8 @@
       color: #cbd5e1;
       border: 1px solid rgba(148, 163, 184, 0.24);
       border-radius: 999px;
-      padding: 0.18rem 0.52rem;
-      font-size: 0.68rem;
+      padding: 0.28rem 0.65rem;
+      font-size: 0.74rem;
       font-weight: 800;
       cursor: pointer;
       transition: all 0.15s ease;
@@ -271,45 +278,15 @@
       border-color: rgba(250, 204, 21, 0.55);
     }
 
-    /* SUBTITLE / COMBO BANNER */
-    .status-line {
-      text-align: center;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      min-height: 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      font-weight: 600;
-    }
-
-    .combo-live-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: linear-gradient(90deg, rgba(250, 204, 21, 0.22), rgba(244, 63, 94, 0.22));
-      border: 1px solid rgba(250, 204, 21, 0.6);
-      color: #fde047;
-      padding: 0.1rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 900;
-      animation: pulseCombo 0.6s infinite alternate;
-    }
-
-    @keyframes pulseCombo {
-      from { transform: scale(0.97); }
-      to { transform: scale(1.05); }
-    }
-
-    /* BOARD CONTAINER */
+    /* BOARD CONTAINER (Strict flex fit-to-viewport, zero overflow) */
     .board-stage {
-      flex: 1;
-      min-height: 290px;
+      flex: 1 1 0;
+      min-height: 0;
+      min-width: 0;
+      width: 100%;
       background: var(--bg-board);
       border: 1.5px solid rgba(148, 163, 184, 0.14);
-      border-radius: 1.35rem;
+      border-radius: 1.2rem;
       box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.75), 0 12px 32px rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
@@ -320,6 +297,10 @@
     }
 
     #dots-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       display: block;
       touch-action: none;
       cursor: pointer;
@@ -327,23 +308,24 @@
 
     /* BOTTOM CONTROLS (Paolo style: ↩ Undo & ↻ New game) */
     .bottom-controls {
+      flex-shrink: 0;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
+      gap: 0.55rem;
     }
 
     .bottom-pill-btn {
       background: rgba(15, 23, 42, 0.9);
       color: #e2e8f0;
       border: 1.5px solid rgba(148, 163, 184, 0.2);
-      border-radius: 0.95rem;
-      padding: 0.72rem 1rem;
-      font-size: 0.92rem;
+      border-radius: 0.9rem;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.88rem;
       font-weight: 800;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.45rem;
+      gap: 0.4rem;
       cursor: pointer;
       transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
     }
@@ -636,6 +618,20 @@
         </ul>
       </div>
 
+      <div class="rivalry-strip" aria-label="Head to Head Rivalry and Opponent Mode">
+        <div class="rivalry-stats-text" id="h2h-summary">
+          ⚔️ <span>Doppio Login: clicca i badge di P1 e P2!</span>
+        </div>
+        <div class="mode-switch-pills">
+          <button type="button" class="mini-pill-btn active" id="mode-2p-btn" title="2 Giocatori Umani (Doppio Login)">
+            👥 2P Dual
+          </button>
+          <button type="button" class="mini-pill-btn" id="mode-bot-btn" title="Gioca contro il Bot CPU">
+            🤖 vs Bot
+          </button>
+        </div>
+      </div>
+
       <div>
         <span class="setup-section-label" id="grid-label">Dimensione Griglia</span>
         <div class="grid-size-selector" id="grid-selector">
@@ -662,7 +658,7 @@
     </div>
   </section>
 
-  <!-- MAIN GAMEPLAY SHELL (Inspired by Paolo's 02..04 screenshots + Dual PuffinLogin) -->
+  <!-- MAIN GAMEPLAY SHELL (Clean Mobile View: Top Bar + Dual Login Cards + Full-Height Board + Bottom Undo/New Game) -->
   <main class="app-shell" id="game-shell">
     <header class="top-bar">
       <div class="top-btn-group">
@@ -684,7 +680,7 @@
             <span class="turn-dot"></span>
             <span id="p1-slot-label">PLAYER 1</span>
           </span>
-          <span id="p1-combo-pill" style="font-size:0.68rem;color:#fca5a5;font-weight:800;"></span>
+          <span id="p1-combo-pill" style="font-size:0.65rem;color:#fca5a5;font-weight:800;"></span>
         </div>
         <div class="player-score-row">
           <div class="player-login-slot">
@@ -708,7 +704,7 @@
             <span class="turn-dot"></span>
             <span id="p2-slot-label">PLAYER 2</span>
           </span>
-          <span id="p2-combo-pill" style="font-size:0.68rem;color:#93c5fd;font-weight:800;"></span>
+          <span id="p2-combo-pill" style="font-size:0.65rem;color:#93c5fd;font-weight:800;"></span>
         </div>
         <div class="player-score-row">
           <div class="player-login-slot" id="p2-login-container">
@@ -729,27 +725,6 @@
         </div>
       </div>
     </section>
-
-    <!-- LIVE HEAD-TO-HEAD RIVALRY & 2P / 1P-BOT MODE SWITCHER -->
-    <section class="rivalry-strip" aria-label="Head to Head Rivalry and Opponent Mode">
-      <div class="rivalry-stats-text" id="h2h-summary">
-        ⚔️ <span>Doppio Login: clicca i badge di P1 e P2!</span>
-      </div>
-      <div class="mode-switch-pills">
-        <button type="button" class="mini-pill-btn active" id="mode-2p-btn" title="2 Giocatori Umani (Doppio Login)">
-          👥 2P Dual
-        </button>
-        <button type="button" class="mini-pill-btn" id="mode-bot-btn" title="Gioca contro il Bot CPU">
-          🤖 vs Bot
-        </button>
-      </div>
-    </section>
-
-    <!-- INSTRUCTION / LIVE COMBO STATUS -->
-    <div class="status-line" id="status-line">
-      <span id="instruction-text">Scorri o tocca per unire • Annulla se serve</span>
-      <span id="live-combo-badge" class="combo-live-pill" hidden>🔥 COMBO x2</span>
-    </div>
 
     <!-- NEON CANVAS BOARD -->
     <div class="board-stage" id="board-stage">

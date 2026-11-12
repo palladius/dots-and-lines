@@ -64,7 +64,19 @@ export class NeonBoardRenderer {
 
     this._rafId = null;
     this._bindEvents();
+    this._observeStageResize();
     this._startLoop();
+  }
+
+  _observeStageResize() {
+    const stage = this.canvas?.parentElement;
+    if (stage && typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver(() => this.resize());
+      this._resizeObserver.observe(stage);
+    }
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => this.resize());
+    }
   }
 
   setState(state) {
@@ -94,10 +106,13 @@ export class NeonBoardRenderer {
 
   resize() {
     if (!this.canvas) return;
-    const rect = this.canvas.parentElement?.getBoundingClientRect() || { width: 380, height: 430 };
-    const cssW = Math.max(260, Math.min(540, Math.floor(rect.width)));
-    const cssH = Math.max(270, Math.min(580, Math.floor(rect.height)));
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const stage = this.canvas.parentElement;
+    const rect = stage?.getBoundingClientRect() || { width: 360, height: 420 };
+    const rawW = stage?.clientWidth || rect.width || 360;
+    const rawH = stage?.clientHeight || rect.height || 420;
+    const cssW = Math.max(160, Math.floor(rawW));
+    const cssH = Math.max(160, Math.floor(rawH));
+    const dpr = Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 2.5);
 
     this.canvas.width = Math.round(cssW * dpr);
     this.canvas.height = Math.round(cssH * dpr);
@@ -107,16 +122,18 @@ export class NeonBoardRenderer {
 
     const cols = this.state?.boxCols || 4;
     const rows = this.state?.boxRows || 5;
-    const pad = Math.max(28, Math.min(44, Math.round(Math.min(cssW, cssH) * 0.085)));
-    const usableW = cssW - pad * 2;
-    const usableH = cssH - pad * 2;
-    const step = Math.floor(Math.min(usableW / cols, usableH / rows));
+    const pad = Math.max(20, Math.min(36, Math.round(Math.min(cssW, cssH) * 0.075)));
+    const usableW = Math.max(80, cssW - pad * 2);
+    const usableH = Math.max(80, cssH - pad * 2);
+    const step = Math.max(20, Math.floor(Math.min(usableW / cols, usableH / rows)));
     const gridW = step * cols;
     const gridH = step * rows;
 
     this.layout = {
       width: cssW,
       height: cssH,
+      padX: pad,
+      padY: pad,
       step,
       originX: Math.round((cssW - gridW) / 2),
       originY: Math.round((cssH - gridH) / 2),
@@ -248,9 +265,11 @@ export class NeonBoardRenderer {
       }
     };
 
-    this.canvas.addEventListener('pointerdown', onDown);
-    this.canvas.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    this.canvas.addEventListener?.('pointerdown', onDown);
+    this.canvas.addEventListener?.('pointermove', onMove);
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('pointerup', onUp);
+    }
   }
 
   _findNearestDot(x, y, maxDist) {
@@ -340,6 +359,7 @@ export class NeonBoardRenderer {
   }
 
   _startLoop() {
+    if (typeof requestAnimationFrame === 'undefined') return;
     const tick = (now) => {
       this.render(now);
       this._rafId = requestAnimationFrame(tick);

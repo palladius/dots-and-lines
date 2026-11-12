@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   createGameState,
   claimSegment,
@@ -7,6 +8,7 @@ import {
   chooseBotMove,
   parseGridKey,
 } from '../src/core/DotsEngine.js';
+import { NeonBoardRenderer } from '../src/ui/NeonBoardRenderer.js';
 
 test('createGameState initializes 4x5 Paolo Classic grid (20 boxes, 49 segments) and 3x3 grid', () => {
   const s45 = createGameState('4x5');
@@ -103,3 +105,59 @@ test('chooseBotMove immediately takes a 4th side when a box has 3 sides drawn', 
   const botMove = chooseBotMove(state);
   assert.deepEqual(botMove, { type: 'v', r: 0, c: 1 });
 });
+
+test('GHI #1: NeonBoardRenderer fits all dots inside mobile board-stage viewports without clipping', () => {
+  const viewports = [
+    { width: 336, height: 390 }, // Compact Android mobile remaining board height
+    { width: 360, height: 480 }, // Pixel 360x780 remaining board height
+    { width: 388, height: 610 }, // Pixel 412x915 remaining board height
+  ];
+  const grids = ['3x3', '4x4', '4x5', '5x5', '6x6'];
+
+  for (const vp of viewports) {
+    for (const gridKey of grids) {
+      const mockCanvas = {
+        width: 0,
+        height: 0,
+        style: {},
+        parentElement: {
+          clientWidth: vp.width,
+          clientHeight: vp.height,
+          getBoundingClientRect: () => vp,
+        },
+        getContext: () => ({
+          setTransform: () => {},
+          clearRect: () => {},
+        }),
+      };
+
+      const renderer = new NeonBoardRenderer(mockCanvas);
+      const state = createGameState(gridKey);
+      renderer.setState(state);
+
+      const topLeft = renderer.getDotCoords(0, 0);
+      const bottomRight = renderer.getDotCoords(state.dotRows - 1, state.dotCols - 1);
+
+      assert.ok(topLeft.x >= renderer.layout.padX, `Left dots inside padX on ${gridKey}`);
+      assert.ok(topLeft.y >= renderer.layout.padY, `Top dots inside padY on ${gridKey}`);
+      assert.ok(
+        bottomRight.x <= vp.width - renderer.layout.padX,
+        `Right dots inside width on ${gridKey} (${bottomRight.x} <= ${vp.width - renderer.layout.padX})`
+      );
+      assert.ok(
+        bottomRight.y <= vp.height - renderer.layout.padY,
+        `Bottom dots inside height on ${gridKey} (${bottomRight.y} <= ${vp.height - renderer.layout.padY})`
+      );
+    }
+  }
+});
+
+test('GHI #1: #game-shell removes intermediate rivalry-strip and status-line clutter', () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const gameShellPart = html.split('<main class="app-shell" id="game-shell">')[1]?.split('</main>')[0] || '';
+  assert.ok(gameShellPart.length > 0, '#game-shell exists');
+  assert.ok(!gameShellPart.includes('class="rivalry-strip"'), 'No rivalry-strip inside #game-shell');
+  assert.ok(!gameShellPart.includes('id="status-line"'), 'No status-line inside #game-shell');
+  assert.ok(html.includes('height: 100dvh;'), '100dvh lock present');
+});
+

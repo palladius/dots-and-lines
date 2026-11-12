@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] - 2026-11-12
+
+### Fixed
+- **📱 Mobile Viewport Fit & Clean Gameplay Layout (Fixes #1)**:
+  - Removed intermediate `.rivalry-strip` and `#status-line` clutter from `#game-shell` during active gameplay, keeping only the top bar + 2 PuffinLogin player cards at the top, the full-height neon dot grid in the middle, and `↩ Annulla` / `↻ Nuova partita` at the bottom (moved `2P Dual` / `vs Bot` switcher into the `⌂` start/menu overlay).
+  - Locked `.app-shell` to `height: 100dvh; max-height: 100dvh; overflow: hidden;` with `flex: 1 1 0; min-height: 0;` on `.board-stage` and `position: absolute; inset: 0;` on `#dots-canvas`.
+  - Updated `NeonBoardRenderer.resize()` with a `ResizeObserver` on `.board-stage` and `visualViewport` listener so all grid sizes (`3x3` to `6x6`) dynamically scale to fit 100% inside mobile viewports without clipping or scrolling.
+
 ## [1.0.0] - 2026-11-11
 
 ### Added
@@ -9,3 +17,4 @@
   - High-DPI Neon Canvas renderer with breathing dots, laser line glow + white-hot core on latest segment, particle burst, shockwave rings, and Pixar avatar stamps inside conquered boxes.
   - Web Audio synthesizer with ascending `Do-Re-Mi-Fa-Sol-La-Si-Do` musical combo scale on consecutive box captures.
   - Cloud High Scores & Head-to-Head (`H2H`) rivalry stats persisted to `pvt-puffin-login` Firestore (`ror-goldie`).
+
