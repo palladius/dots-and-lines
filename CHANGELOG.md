@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1] - 2026-11-12
+
+### Changed
+- **👻 Ghost move preview**: the hover/swipe preview of a move that has NOT been played yet is now dashed, thinner, glow-less, white-outlined and animated (marching ants), so it can never be confused with a real solid neon line.
+- **🖥️ Bot CPU color**: switched to dark terminal-phosphor green `#16A34A`.
+
 ## [1.1.0] - 2026-11-12
 
 ### Added

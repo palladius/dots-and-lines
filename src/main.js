@@ -112,8 +112,8 @@ const CPU_BOT_PROFILE = {
   id: 'cpu',
   shortName: 'Bot CPU',
   displayName: 'Bot CPU 🤖',
-  colorHex: '#22C55E', // Neon green: purple #A855F7 is Kate's color, don't clash!
-  glowHex: 'rgba(34, 197, 94, 0.45)',
+  colorHex: '#16A34A', // Dark terminal-phosphor green (purple #A855F7 is Kate's color, don't clash!)
+  glowHex: 'rgba(22, 163, 74, 0.45)',
   avatar: './assets/avatars/saga.png',
   emoji: '🤖',
 };
