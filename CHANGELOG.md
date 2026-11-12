@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.2] - 2026-11-12
+
+### Added
+- **🧪 Real E2E redeem test (`just e2e [chrome|webkit]`)**: `tests/e2e/redeem_card_e2e.py` plays a full 3x3 game by real mouse clicks on the canvas, waits for the Hall of Fame modal and the dropped card, then clicks "✨ Riscatta Carta!" with the real mouse (`page.mouse.click`, so browser hit-testing applies) and checks the toast closes and the card is in the Album. Passes on Chrome and WebKit (iPad engine).
+
+### Fixed
+- **🧊 Stale JS after `git pull` in local dev**: `just serve` now uses `scripts/serve_nocache.py` (`Cache-Control: no-store`). Plain `python3 -m http.server` only sends `Last-Modified`, so Chrome kept running the cached pre-fix `src/puffin-cards.js` after a normal reload (verified: `transferSize: 0`), which made the v1.0.3 "Riscatta Carta" fix look still broken.
+
 ## [1.1.1] - 2026-11-12
 
 ### Changed
