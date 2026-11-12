@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2] - 2026-11-12
+
+### Fixed
+- **🃏 "✨ Riscatta Carta!" button did nothing over the Hall of Fame**:
+  - Root cause: `<dialog id="gameover-dialog">.showModal()` makes everything outside the dialog `inert` (even Top-Layer popovers), so every button on the card reveal toast (Riscatta, ✖, Album, Gira) silently ignored clicks.
+  - `showPuffinCardRevealToast()` in `src/puffin-cards.js` now mounts the toast host inside the topmost open modal `<dialog>` and follows dialogs as they open/close (moving back to `<body>` when they close).
+  - Redeeming is always "yes": the card is already saved to the Album when it unlocks. The button now shows `✅ Riscattata! Nel tuo Album`, fires a `puffin-card-claimed` event and then closes.
+
 ## [1.0.1] - 2026-11-12
 
 ### Fixed

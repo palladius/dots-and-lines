@@ -3060,6 +3060,29 @@ export function createPuffinCardsElementClass({
 }
 
 /**
+ * Returns the topmost open MODAL `<dialog>` (opened via `.showModal()`), or `null`.
+ * While a modal dialog is open, the browser makes EVERYTHING outside its subtree `inert`
+ * (even `popover` elements already promoted to the Top Layer!), so clicks on the card
+ * toast buttons were silently swallowed. Mounting the toast host INSIDE the modal dialog
+ * keeps it interactive.
+ */
+function findTopModalDialog() {
+  if (typeof document === 'undefined') return null;
+  try {
+    const modals = Array.from(document.querySelectorAll('dialog[open]')).filter((d) => {
+      try {
+        return d.matches(':modal');
+      } catch {
+        return false;
+      }
+    });
+    return modals[modals.length - 1] || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Promotes a `popover="manual"` host to the topmost slot of the browser's HTML5 Top Layer
  * so it ALWAYS renders ABOVE any `<dialog open>` (like Hall of Fame `.showModal()`) and ABOVE `dialog::backdrop`!
  */
@@ -3324,15 +3347,31 @@ export function showPuffinCardRevealToast({
   `;
   stage.appendChild(box);
   shadow.append(stage);
-  document.body.appendChild(host);
 
-  // Promote immediately + re-promote after any <dialog>.showModal() (e.g. Hall of Fame on Game Over!)
-  promoteHostToTopLayer(host);
+  // Mount INSIDE the topmost modal <dialog> (if any), otherwise in <body>: a modal dialog makes
+  // everything outside its subtree inert, which made "✨ Riscatta Carta!" (and ✖/Album/Gira) unclickable!
+  const mountHost = ({ forcePromote = false } = {}) => {
+    const target = findTopModalDialog() || document.body;
+    const moved = host.parentNode !== target;
+    if (moved) target.appendChild(host);
+    if (moved || forcePromote) promoteHostToTopLayer(host);
+  };
+  mountHost({ forcePromote: true });
+
+  // Re-promote after any <dialog>.showModal() (e.g. Hall of Fame on Game Over!) ...
   const repromoteTimers = [80, 260, 650, 1200].map((ms) =>
     setTimeout(() => {
-      if (host.isConnected) promoteHostToTopLayer(host);
+      if (host.isConnected) mountHost({ forcePromote: true });
     }, ms)
   );
+  // ... and keep following modal dialogs opened/closed later (e.g. HoF button, PLAY AGAIN / CLOSE).
+  const mountWatcher = setInterval(() => {
+    if (!host.isConnected) {
+      clearInterval(mountWatcher);
+      return;
+    }
+    mountHost();
+  }, 250);
 
   playCardAudioOrFanfare(card);
   attachCardBackHoverVideo(box);
@@ -3373,6 +3412,7 @@ export function showPuffinCardRevealToast({
 
   const cleanupAndClose = () => {
     repromoteTimers.forEach((t) => clearTimeout(t));
+    clearInterval(mountWatcher);
     stopMythicCardMusic();
     try {
       if (typeof host.hidePopover === 'function' && host.matches(':popover-open')) {
@@ -3382,8 +3422,23 @@ export function showPuffinCardRevealToast({
     host.remove();
   };
 
-  box.querySelector('#close-toast')?.addEventListener('click', cleanupAndClose);
-  box.querySelector('#claim-toast-btn')?.addEventListener('click', cleanupAndClose);
+  box.querySelector('#close-toast')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    cleanupAndClose();
+  });
+  // Redeem is ALWAYS "yes": the card is already persisted in the Album by `unlockCard()` before this
+  // toast shows (✖, auto-dock or closing the Hall of Fame never lose it). This button just confirms.
+  const claimBtn = box.querySelector('#claim-toast-btn');
+  claimBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (claimBtn.disabled) return;
+    claimBtn.disabled = true;
+    claimBtn.textContent = '✅ Riscattata! Nel tuo Album';
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('puffin-card-claimed', { detail: { card, ownership } }));
+    }
+    setTimeout(cleanupAndClose, 650);
+  });
   box.querySelector('#open-album-toast-btn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     cleanupAndClose();
