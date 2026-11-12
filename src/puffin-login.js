@@ -1397,6 +1397,20 @@ export function validateAndNormalizeScorePayload(raw = {}, fallbackTelemetry = {
       rawOutcome === 'victory' ? 'win' : rawOutcome === 'draw' ? 'tie' : rawOutcome;
   }
 
+  // Per-move timing telemetry (avg_move_ms, max_move_ms, avg_move_sec, max_move_sec)
+  const rawAvgMoveMs =
+    raw.avg_move_ms ?? raw.avgMoveMs ?? extra.avg_move_ms ?? extra.avgMoveMs;
+  if (rawAvgMoveMs !== undefined && rawAvgMoveMs !== null && !Number.isNaN(Number(rawAvgMoveMs))) {
+    extra.avg_move_ms = Math.round(Number(rawAvgMoveMs));
+    extra.avg_move_sec = Number((extra.avg_move_ms / 1000).toFixed(2));
+  }
+  const rawMaxMoveMs =
+    raw.max_move_ms ?? raw.maxMoveMs ?? extra.max_move_ms ?? extra.maxMoveMs;
+  if (rawMaxMoveMs !== undefined && rawMaxMoveMs !== null && !Number.isNaN(Number(rawMaxMoveMs))) {
+    extra.max_move_ms = Math.round(Number(rawMaxMoveMs));
+    extra.max_move_sec = Number((extra.max_move_ms / 1000).toFixed(2));
+  }
+
   const effectiveDisplayName = guestName
     ? `${profile.shortName} (${guestName})`
     : profile.displayName;
@@ -1435,6 +1449,10 @@ export function validateAndNormalizeScorePayload(raw = {}, fallbackTelemetry = {
     opponent_score: extra.opponent_score ?? null,
     boxes_claimed: extra.boxes_claimed ?? null,
     max_combo: extra.max_combo ?? null,
+    avg_move_ms: extra.avg_move_ms ?? null,
+    max_move_ms: extra.max_move_ms ?? null,
+    avg_move_sec: extra.avg_move_sec ?? null,
+    max_move_sec: extra.max_move_sec ?? null,
     outcome: extra.outcome ?? null,
     h2h_key: extra.h2h_key ?? null,
     guest_name: guestName,
@@ -6119,6 +6137,12 @@ export const PuffinLogin = {
     moves = 0,
     maxComboP1 = 0,
     maxComboP2 = 0,
+    p1MoveStats = null,
+    p2MoveStats = null,
+    avgMoveMsP1,
+    maxMoveMsP1,
+    avgMoveMsP2,
+    maxMoveMsP2,
     durationSec = 120,
     startedAt,
     endedAt,
@@ -6132,6 +6156,37 @@ export const PuffinLogin = {
     const b2 = Number.isFinite(Number(p2Boxes)) ? Number(p2Boxes) : 0;
     const outcome1 = b1 > b2 ? 'win' : b1 < b2 ? 'loss' : 'tie';
     const outcome2 = b2 > b1 ? 'win' : b2 < b1 ? 'loss' : 'tie';
+
+    const resolvedAvgMs1 = Math.round(Number(avgMoveMsP1 ?? p1MoveStats?.avgMs ?? 0)) || 0;
+    const resolvedMaxMs1 = Math.round(Number(maxMoveMsP1 ?? p1MoveStats?.maxMs ?? 0)) || 0;
+    const resolvedAvgSec1 = Number((resolvedAvgMs1 / 1000).toFixed(2));
+    const resolvedMaxSec1 = Number((resolvedMaxMs1 / 1000).toFixed(2));
+    const resolvedMoves1 = Number(p1MoveStats?.moves ?? 0) || 0;
+
+    const resolvedAvgMs2 = Math.round(Number(avgMoveMsP2 ?? p2MoveStats?.avgMs ?? 0)) || 0;
+    const resolvedMaxMs2 = Math.round(Number(maxMoveMsP2 ?? p2MoveStats?.maxMs ?? 0)) || 0;
+    const resolvedAvgSec2 = Number((resolvedAvgMs2 / 1000).toFixed(2));
+    const resolvedMaxSec2 = Number((resolvedMaxMs2 / 1000).toFixed(2));
+    const resolvedMoves2 = Number(p2MoveStats?.moves ?? 0) || 0;
+
+    const moveTimingTelemetry = {
+      p1: {
+        player_id: user1.id,
+        moves: resolvedMoves1,
+        avg_move_ms: resolvedAvgMs1,
+        max_move_ms: resolvedMaxMs1,
+        avg_move_sec: resolvedAvgSec1,
+        max_move_sec: resolvedMaxSec1,
+      },
+      p2: {
+        player_id: user2.id,
+        moves: resolvedMoves2,
+        avg_move_ms: resolvedAvgMs2,
+        max_move_ms: resolvedMaxMs2,
+        avg_move_sec: resolvedAvgSec2,
+        max_move_sec: resolvedMaxSec2,
+      },
+    };
 
     const calcScore = (boxes, oppBoxes, maxCombo, outcome) => {
       const base = boxes * 100;
@@ -6168,6 +6223,10 @@ export const PuffinLogin = {
       opponent_score: b2,
       boxes_claimed: b1,
       max_combo: maxComboP1,
+      avg_move_ms: resolvedAvgMs1,
+      max_move_ms: resolvedMaxMs1,
+      avg_move_sec: resolvedAvgSec1,
+      max_move_sec: resolvedMaxSec1,
       outcome: outcome1,
       h2h_key: h2hKey,
       score: finalScore1,
@@ -6175,7 +6234,7 @@ export const PuffinLogin = {
       started_at: startIso,
       ended_at: endIso,
       skipCardDrop,
-      summary_text: `${user1.shortName || user1.id} ${b1}–${b2} ${user2.shortName || user2.id} (${grid}, max combo ${maxComboP1}x)`,
+      summary_text: `${user1.shortName || user1.id} ${b1}–${b2} ${user2.shortName || user2.id} (${grid}, max combo ${maxComboP1}x, avg ${resolvedAvgSec1}s/move, max ${resolvedMaxSec1}s)`,
       extra: {
         mode,
         grid,
@@ -6183,7 +6242,17 @@ export const PuffinLogin = {
         opponent_boxes: b2,
         total_boxes: totalBoxes,
         moves,
+        player_moves: resolvedMoves1,
         max_combo: maxComboP1,
+        avg_move_ms: resolvedAvgMs1,
+        max_move_ms: resolvedMaxMs1,
+        avg_move_sec: resolvedAvgSec1,
+        max_move_sec: resolvedMaxSec1,
+        opponent_avg_move_ms: resolvedAvgMs2,
+        opponent_max_move_ms: resolvedMaxMs2,
+        opponent_avg_move_sec: resolvedAvgSec2,
+        opponent_max_move_sec: resolvedMaxSec2,
+        move_timing: moveTimingTelemetry,
         opponent_id: user2.id,
         outcome: outcome1,
         h2h_key: h2hKey,
@@ -6203,6 +6272,10 @@ export const PuffinLogin = {
         opponent_score: b1,
         boxes_claimed: b2,
         max_combo: maxComboP2,
+        avg_move_ms: resolvedAvgMs2,
+        max_move_ms: resolvedMaxMs2,
+        avg_move_sec: resolvedAvgSec2,
+        max_move_sec: resolvedMaxSec2,
         outcome: outcome2,
         h2h_key: h2hKey,
         score: finalScore2,
@@ -6210,7 +6283,7 @@ export const PuffinLogin = {
         started_at: startIso,
         ended_at: endIso,
         skipCardDrop: true,
-        summary_text: `${user2.shortName || user2.id} ${b2}–${b1} ${user1.shortName || user1.id} (${grid}, max combo ${maxComboP2}x)`,
+        summary_text: `${user2.shortName || user2.id} ${b2}–${b1} ${user1.shortName || user1.id} (${grid}, max combo ${maxComboP2}x, avg ${resolvedAvgSec2}s/move, max ${resolvedMaxSec2}s)`,
         extra: {
           mode,
           grid,
@@ -6218,7 +6291,17 @@ export const PuffinLogin = {
           opponent_boxes: b1,
           total_boxes: totalBoxes,
           moves,
+          player_moves: resolvedMoves2,
           max_combo: maxComboP2,
+          avg_move_ms: resolvedAvgMs2,
+          max_move_ms: resolvedMaxMs2,
+          avg_move_sec: resolvedAvgSec2,
+          max_move_sec: resolvedMaxSec2,
+          opponent_avg_move_ms: resolvedAvgMs1,
+          opponent_max_move_ms: resolvedMaxMs1,
+          opponent_avg_move_sec: resolvedAvgSec1,
+          opponent_max_move_sec: resolvedMaxSec1,
+          move_timing: moveTimingTelemetry,
           opponent_id: user1.id,
           outcome: outcome2,
           h2h_key: h2hKey,
@@ -6231,6 +6314,7 @@ export const PuffinLogin = {
       h2hKey,
       p1Record,
       p2Record,
+      moveTiming: moveTimingTelemetry,
       h2hStats: this.getHeadToHeadStats(user1.id, user2.id, {
         gameId: targetGame,
         guestNameA: user1.guest_name || user1.guestName,

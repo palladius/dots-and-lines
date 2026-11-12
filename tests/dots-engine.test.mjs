@@ -7,8 +7,10 @@ import {
   undoMove,
   chooseBotMove,
   parseGridKey,
+  getMoveTimeStats,
 } from '../src/core/DotsEngine.js';
 import { NeonBoardRenderer } from '../src/ui/NeonBoardRenderer.js';
+import { PuffinLogin, validateAndNormalizeScorePayload } from '../src/puffin-login.js';
 
 test('createGameState initializes 4x5 Paolo Classic grid (20 boxes, 49 segments) and 3x3 grid', () => {
   const s45 = createGameState('4x5');
@@ -160,4 +162,93 @@ test('GHI #1: #game-shell removes intermediate rivalry-strip and status-line clu
   assert.ok(!gameShellPart.includes('id="status-line"'), 'No status-line inside #game-shell');
   assert.ok(html.includes('height: 100dvh;'), '100dvh lock present');
 });
+
+test('getMoveTimeStats computes accurate average and max move times for P1 and P2 and respects undoMove', async () => {
+  const t0 = 1_700_000_000_000;
+  const state = createGameState('3x3', t0);
+
+  // Move 1 by P1: takes 1500ms
+  claimSegment(state, 'h', 0, 0, t0 + 1500);
+  // Move 2 by P2: takes 3200ms
+  claimSegment(state, 'h', 1, 0, t0 + 1500 + 3200);
+  // Move 3 by P1: takes 2500ms
+  claimSegment(state, 'v', 0, 0, t0 + 1500 + 3200 + 2500);
+  // Move 4 by P2: takes 800ms
+  claimSegment(state, 'v', 0, 1, t0 + 1500 + 3200 + 2500 + 800);
+
+  const stats = getMoveTimeStats(state);
+  assert.equal(stats.p1.moves, 2);
+  assert.equal(stats.p1.avgMs, 2000); // (1500 + 2500) / 2
+  assert.equal(stats.p1.maxMs, 2500);
+  assert.equal(stats.p1.avgSec, 2);
+  assert.equal(stats.p1.maxSec, 2.5);
+
+  assert.equal(stats.p2.moves, 2);
+  assert.equal(stats.p2.avgMs, 2000); // (3200 + 800) / 2
+  assert.equal(stats.p2.maxMs, 3200);
+  assert.equal(stats.p2.avgSec, 2);
+  assert.equal(stats.p2.maxSec, 3.2);
+
+  // Undo P2's 4th move -> P2 goes back to 1 move (3200ms)
+  undoMove(state, t0 + 9000);
+  const afterUndo = getMoveTimeStats(state);
+  assert.equal(afterUndo.p2.moves, 1);
+  assert.equal(afterUndo.p2.avgMs, 3200);
+  assert.equal(afterUndo.p2.maxMs, 3200);
+
+  // Verify PuffinLogin telemetry JSON includes avg_move_ms, max_move_ms, avg_move_sec, max_move_sec, and move_timing
+  const dualRes = await PuffinLogin.submitDualMatchScore({
+    appId: 'dots-and-lines',
+    p1User: { id: 'ale', shortName: 'Ale' },
+    p2User: { id: 'seby', shortName: 'Seby' },
+    p1Boxes: 5,
+    p2Boxes: 4,
+    totalBoxes: 9,
+    grid: '3x3',
+    moves: 24,
+    maxComboP1: 3,
+    maxComboP2: 2,
+    p1MoveStats: stats.p1,
+    p2MoveStats: stats.p2,
+    durationSec: 45,
+    mode: '2p-local',
+    skipCardDrop: true,
+  });
+
+  assert.equal(dualRes.p1Record.avg_move_ms, 2000);
+  assert.equal(dualRes.p1Record.max_move_ms, 2500);
+  assert.equal(dualRes.p1Record.avg_move_sec, 2);
+  assert.equal(dualRes.p1Record.max_move_sec, 2.5);
+  assert.equal(dualRes.p1Record.extra.opponent_avg_move_ms, 2000);
+  assert.equal(dualRes.p1Record.extra.opponent_max_move_ms, 3200);
+  assert.deepEqual(dualRes.p1Record.extra.move_timing.p1, {
+    player_id: 'ale',
+    moves: 2,
+    avg_move_ms: 2000,
+    max_move_ms: 2500,
+    avg_move_sec: 2,
+    max_move_sec: 2.5,
+  });
+  assert.deepEqual(dualRes.p2Record.extra.move_timing.p2, {
+    player_id: 'seby',
+    moves: 2,
+    avg_move_ms: 2000,
+    max_move_ms: 3200,
+    avg_move_sec: 2,
+    max_move_sec: 3.2,
+  });
+
+  const normalized = validateAndNormalizeScorePayload({
+    game_id: 'dots-and-lines',
+    player_id: 'ale',
+    score: 850,
+    avg_move_ms: 1850,
+    max_move_ms: 4100,
+  });
+  assert.equal(normalized.avg_move_ms, 1850);
+  assert.equal(normalized.max_move_ms, 4100);
+  assert.equal(normalized.avg_move_sec, 1.85);
+  assert.equal(normalized.max_move_sec, 4.1);
+});
+
 

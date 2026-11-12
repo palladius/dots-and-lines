@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0] - 2026-11-12
+
+### Added
+- **⏱️ Per-Move Timing Stats & PuffinLogin Telemetry (`avg_move_ms` / `max_move_ms`)**:
+  - Tracked exact elapsed time per move (`moveTimesMs.p1` and `moveTimesMs.p2`, undo-safe via `cloneBoardSnapshot`) and added [`getMoveTimeStats`](file:///Users/riccardo/git/dots-and-lines/src/core/DotsEngine.js) in `src/core/DotsEngine.js`.
+  - Added side-by-side **Ale vs Seby** move timing cards (`#winner-timing-stats`) in the Game Over modal showing **Tempo Medio / mossa** (`⏱️ Media/mossa`) and **Tempo Max / mossa** (`🐢 Max/mossa`) plus total moves for each player.
+  - Enriched `PuffinLogin.submitDualMatchScore` and `validateAndNormalizeScorePayload` (`src/puffin-login.js`) so the final high-score telemetry JSON includes `avg_move_ms`, `max_move_ms`, `avg_move_sec`, `max_move_sec`, `player_moves`, `opponent_avg_move_ms`, `opponent_max_move_ms`, and `move_timing: { p1, p2 }`.
+
 ## [1.0.1] - 2026-11-12
 
 ### Fixed

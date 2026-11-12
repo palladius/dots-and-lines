@@ -561,6 +561,49 @@
       margin: 0;
     }
 
+    .winner-timing-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .winner-timing-card {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1.5px solid rgba(148, 163, 184, 0.22);
+      border-radius: 0.85rem;
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      text-align: left;
+      font-size: 0.74rem;
+      color: #e2e8f0;
+    }
+
+    .winner-timing-header {
+      font-weight: 900;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.3rem;
+    }
+
+    .winner-timing-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #cbd5e1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .winner-timing-row strong {
+      color: #f8fafc;
+      font-weight: 800;
+    }
+
     .modal-action-row {
       display: flex;
       gap: 0.55rem;
@@ -748,6 +791,7 @@
       <img id="winner-avatar" class="winner-avatar" src="./assets/avatars/ale.png" alt="Winner" />
       <h2 class="winner-title" id="winner-title">🏆 Vittoria!</h2>
       <p class="winner-sub" id="winner-sub"></p>
+      <div class="winner-timing-grid" id="winner-timing-stats"></div>
       <p class="winner-sub" id="winner-h2h-line" style="color:#fde047;font-weight:800;"></p>
     </div>
     <div class="modal-action-row">

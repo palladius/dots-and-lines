@@ -35,7 +35,7 @@ export function parseGridKey(gridKey = '4x5') {
   return GRID_PRESETS['4x5'];
 }
 
-export function createGameState(gridKey = '4x5') {
+export function createGameState(gridKey = '4x5', nowMs = Date.now()) {
   const preset = parseGridKey(gridKey);
   const { boxCols, boxRows } = preset;
   const dotCols = boxCols + 1;
@@ -73,10 +73,12 @@ export function createGameState(gridKey = '4x5') {
     currentCombo: 0,
     maxCombo: { p1: 0, p2: 0 },
     moveCount: 0,
+    moveTimesMs: { p1: [], p2: [] },
+    turnStartedAtMs: nowMs,
     lastMove: null,
     isGameOver: false,
     winner: null, // 'p1' | 'p2' | 'tie' | null
-    startedAt: new Date().toISOString(),
+    startedAt: new Date(nowMs).toISOString(),
     endedAt: null,
     history: [],
   };
@@ -92,10 +94,49 @@ function cloneBoardSnapshot(state) {
     currentCombo: state.currentCombo,
     maxCombo: { ...state.maxCombo },
     moveCount: state.moveCount,
+    moveTimesMs: {
+      p1: [...(state.moveTimesMs?.p1 || [])],
+      p2: [...(state.moveTimesMs?.p2 || [])],
+    },
+    turnStartedAtMs: state.turnStartedAtMs,
     lastMove: state.lastMove ? { ...state.lastMove } : null,
     isGameOver: state.isGameOver,
     winner: state.winner,
     endedAt: state.endedAt,
+  };
+}
+
+export function getMoveTimeStats(state) {
+  const calc = (arr = []) => {
+    const valid = Array.isArray(arr)
+      ? arr.map(Number).filter((v) => Number.isFinite(v) && v >= 0)
+      : [];
+    if (valid.length === 0) {
+      return {
+        moves: 0,
+        totalMs: 0,
+        avgMs: 0,
+        maxMs: 0,
+        avgSec: 0,
+        maxSec: 0,
+      };
+    }
+    const totalMs = Math.round(valid.reduce((acc, v) => acc + v, 0));
+    const avgMs = Math.round(totalMs / valid.length);
+    const maxMs = Math.round(Math.max(...valid));
+    return {
+      moves: valid.length,
+      totalMs,
+      avgMs,
+      maxMs,
+      avgSec: Number((avgMs / 1000).toFixed(2)),
+      maxSec: Number((maxMs / 1000).toFixed(2)),
+    };
+  };
+
+  return {
+    p1: calc(state?.moveTimesMs?.p1),
+    p2: calc(state?.moveTimesMs?.p2),
   };
 }
 
@@ -131,7 +172,7 @@ export function canClaimSegment(state, type, r, c) {
  * Claims a segment ('h' or 'v') at (r, c) for `state.currentTurn`.
  * Mutates `state` in place (pushing undo snapshot to `state.history`) and returns an outcome descriptor.
  */
-export function claimSegment(state, type, r, c) {
+export function claimSegment(state, type, r, c, nowMs = Date.now()) {
   const cleanType = String(type || '').toLowerCase();
   if (!canClaimSegment(state, cleanType, r, c)) {
     return { ok: false, reason: 'invalid_or_taken' };
@@ -144,7 +185,15 @@ export function claimSegment(state, type, r, c) {
   const moveIndex = state.moveCount + 1;
   state.moveCount = moveIndex;
 
-  const segRecord = { owner: player, moveIndex };
+  if (!state.moveTimesMs) {
+    state.moveTimesMs = { p1: [], p2: [] };
+  }
+  const refStartMs = Number.isFinite(state.turnStartedAtMs) ? state.turnStartedAtMs : nowMs;
+  const moveTimeMs = Math.max(10, Math.round(nowMs - refStartMs));
+  state.moveTimesMs[player].push(moveTimeMs);
+  state.turnStartedAtMs = nowMs;
+
+  const segRecord = { owner: player, moveIndex, moveTimeMs };
   if (cleanType === 'h') {
     state.H[r][c] = segRecord;
   } else {
@@ -189,7 +238,7 @@ export function claimSegment(state, type, r, c) {
   const claimedTotal = state.scores.p1 + state.scores.p2;
   if (claimedTotal >= state.totalBoxes) {
     state.isGameOver = true;
-    state.endedAt = new Date().toISOString();
+    state.endedAt = new Date(nowMs).toISOString();
     if (state.scores.p1 > state.scores.p2) {
       state.winner = 'p1';
     } else if (state.scores.p2 > state.scores.p1) {
@@ -205,6 +254,7 @@ export function claimSegment(state, type, r, c) {
     c,
     player,
     moveIndex,
+    moveTimeMs,
     capturedBoxes,
     extraTurn,
     comboCount: state.currentCombo,
@@ -217,6 +267,7 @@ export function claimSegment(state, type, r, c) {
     r,
     c,
     moveIndex,
+    moveTimeMs,
     capturedBoxes,
     extraTurn,
     comboCount: state.currentCombo,
@@ -226,7 +277,7 @@ export function claimSegment(state, type, r, c) {
   };
 }
 
-export function undoMove(state) {
+export function undoMove(state, nowMs = Date.now()) {
   if (!state || !Array.isArray(state.history) || state.history.length === 0) {
     return { ok: false };
   }
@@ -239,6 +290,8 @@ export function undoMove(state) {
   state.currentCombo = prev.currentCombo;
   state.maxCombo = prev.maxCombo;
   state.moveCount = prev.moveCount;
+  state.moveTimesMs = prev.moveTimesMs || { p1: [], p2: [] };
+  state.turnStartedAtMs = nowMs;
   state.lastMove = prev.lastMove;
   state.isGameOver = prev.isGameOver;
   state.winner = prev.winner;

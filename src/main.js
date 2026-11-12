@@ -15,6 +15,7 @@ import {
   claimSegment,
   undoMove,
   chooseBotMove,
+  getMoveTimeStats,
 } from './core/DotsEngine.js';
 import { SoundEngine } from './audio/SoundEngine.js';
 import { NeonBoardRenderer } from './ui/NeonBoardRenderer.js';
@@ -48,6 +49,9 @@ const COPY = {
     tieTitle: '🤝 Pareggio Epico!',
     summaryLine: (n1, s1, s2, n2, grid, combo) =>
       `${n1} (${s1} box) vs ${n2} (${s2} box) su griglia ${grid} • Max Combo ${combo}x`,
+    avgMoveLabel: '⏱️ Media/mossa',
+    maxMoveLabel: '🐢 Max/mossa',
+    movesWord: 'mosse',
   },
   en: {
     langToggleHtml: '<strong>EN</strong> · it',
@@ -77,6 +81,9 @@ const COPY = {
     tieTitle: '🤝 Epic Tie!',
     summaryLine: (n1, s1, s2, n2, grid, combo) =>
       `${n1} (${s1} boxes) vs ${n2} (${s2} boxes) on ${grid} grid • Max Combo ${combo}x`,
+    avgMoveLabel: '⏱️ Avg/move',
+    maxMoveLabel: '🐢 Max/move',
+    movesWord: 'moves',
   },
 };
 
@@ -177,6 +184,7 @@ class DotsAndLinesApp {
     this.$winnerAvatar = document.getElementById('winner-avatar');
     this.$winnerTitle = document.getElementById('winner-title');
     this.$winnerSub = document.getElementById('winner-sub');
+    this.$winnerTimingStats = document.getElementById('winner-timing-stats');
     this.$winnerH2hLine = document.getElementById('winner-h2h-line');
     this.$playAgainBtn = document.getElementById('play-again-btn');
     this.$closeDialogBtn = document.getElementById('close-dialog-btn');
@@ -357,6 +365,9 @@ class DotsAndLinesApp {
     this.$continueBtn.addEventListener('click', () => {
       this.sound.playLineClick();
       this.$startScreen.hidden = true;
+      if (this.state) {
+        this.state.turnStartedAtMs = Date.now();
+      }
       this.renderer.resize();
     });
 
@@ -569,6 +580,29 @@ class DotsAndLinesApp {
       bestCombo
     );
 
+    const moveStats = getMoveTimeStats(this.state);
+    if (this.$winnerTimingStats) {
+      const renderPlayerTimingCard = (pl, st) => `
+        <div class="winner-timing-card" style="border-color:${pl.colorHex}66;">
+          <div class="winner-timing-header" style="color:${pl.colorHex};">
+            <span>${pl.emoji || '⚡'} ${pl.name}</span>
+            <span style="font-size:0.68rem;color:#94a3b8;">${st.moves} ${tr.movesWord}</span>
+          </div>
+          <div class="winner-timing-row">
+            <span>${tr.avgMoveLabel}</span>
+            <strong>${st.avgSec.toFixed(2)}s</strong>
+          </div>
+          <div class="winner-timing-row">
+            <span>${tr.maxMoveLabel}</span>
+            <strong>${st.maxSec.toFixed(2)}s</strong>
+          </div>
+        </div>
+      `;
+      this.$winnerTimingStats.innerHTML =
+        renderPlayerTimingCard(p1, moveStats.p1) +
+        renderPlayerTimingCard(p2, moveStats.p2);
+    }
+
     const durationSec = Math.max(
       5,
       Math.round((Date.parse(this.state.endedAt) - Date.parse(this.state.startedAt)) / 1000)
@@ -586,6 +620,12 @@ class DotsAndLinesApp {
         moves: this.state.moveCount,
         maxComboP1: this.state.maxCombo.p1,
         maxComboP2: this.state.maxCombo.p2,
+        p1MoveStats: moveStats.p1,
+        p2MoveStats: moveStats.p2,
+        avgMoveMsP1: moveStats.p1.avgMs,
+        maxMoveMsP1: moveStats.p1.maxMs,
+        avgMoveMsP2: moveStats.p2.avgMs,
+        maxMoveMsP2: moveStats.p2.maxMs,
         durationSec,
         startedAt: this.state.startedAt,
         endedAt: this.state.endedAt,
