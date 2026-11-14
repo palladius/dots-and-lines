@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0] - 2026-11-14
+
+### Added
+- **⌨️ Power-User Keyboard Controls (Fixes #3)**:
+  - Added pure, deterministic segment-to-segment cursor navigation [`stepSegmentCursor`](file:///Users/riccardo/git/dots-and-lines/src/core/DotsEngine.js) in `src/core/DotsEngine.js` across horizontal (`h:r:c`) and vertical (`v:r:c`) half-rows using `ArrowUp`/`ArrowDown`/`ArrowLeft`/`ArrowRight` (plus `WASD` and `hjkl` Vim bindings) and `Tab`/`R` to flip orientation in place.
+  - Pressing `Space` or `Enter` draws the currently focused segment and leaves the cursor in place (no auto-advance or unexpected jumps).
+  - Added keyboard focus rendering (`this.keyboardCursor`) in `src/ui/NeonBoardRenderer.js` with sober dashed preview on free segments, dashed overlay on already-claimed segments, and endpoint dot focus rings.
+  - Added `U` / `Backspace` shortcut for Undo and `Escape` to hide the keyboard cursor.
+
 ## [1.1.4] - 2026-11-14
 
 ### Added

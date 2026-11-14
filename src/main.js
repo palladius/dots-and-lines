@@ -16,6 +16,7 @@ import {
   undoMove,
   chooseBotMove,
   getMoveTimeStats,
+  stepSegmentCursor,
 } from './core/DotsEngine.js';
 import { SoundEngine } from './audio/SoundEngine.js';
 import { NeonBoardRenderer } from './ui/NeonBoardRenderer.js';
@@ -478,6 +479,86 @@ class DotsAndLinesApp {
     this.$closeDialogBtn.addEventListener('click', () => {
       if (this.$gameoverDialog.open) this.$gameoverDialog.close();
     });
+
+    window.addEventListener('keydown', (e) => this._handleKeyDown(e));
+  }
+
+  _handleKeyDown(e) {
+    if (!e || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!this.state || this.state.isGameOver) return;
+    if (this.$startScreen && !this.$startScreen.hidden) return;
+    if (this.$gameoverDialog?.open || document.querySelector?.('dialog[open]')) return;
+
+    const tag = String(document.activeElement?.tagName || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable) {
+      return;
+    }
+
+    if (this.mode === '1p-bot' && this.state.currentTurn === 'p2') return;
+
+    const key = e.key;
+    const dirMap = {
+      ArrowUp: 'up',
+      w: 'up',
+      W: 'up',
+      k: 'up',
+      K: 'up',
+      ArrowDown: 'down',
+      s: 'down',
+      S: 'down',
+      j: 'down',
+      J: 'down',
+      ArrowLeft: 'left',
+      a: 'left',
+      A: 'left',
+      h: 'left',
+      H: 'left',
+      ArrowRight: 'right',
+      d: 'right',
+      D: 'right',
+      l: 'right',
+      L: 'right',
+      Tab: 'rotate',
+      r: 'rotate',
+      R: 'rotate',
+    };
+
+    if (dirMap[key]) {
+      e.preventDefault();
+      if (tag === 'BUTTON' && typeof document.activeElement?.blur === 'function') {
+        document.activeElement.blur();
+      }
+      this.renderer.pointer.hoverSegment = null;
+      const current = this.renderer.keyboardCursor;
+      const next = current
+        ? stepSegmentCursor(this.state, current, dirMap[key])
+        : { type: 'h', r: 0, c: 0 };
+      this.renderer.setKeyboardCursor(next);
+      return;
+    }
+
+    if (key === ' ' || key === 'Enter') {
+      if (!this.renderer.keyboardCursor) return;
+      e.preventDefault();
+      const { type, r, c } = this.renderer.keyboardCursor;
+      this.handleHumanSegment(type, r, c);
+      // Keep keyboardCursor in place (no auto-advance / no magic jumps per GHI #3)
+      this.renderer.setKeyboardCursor({ type, r, c });
+      return;
+    }
+
+    if (key === 'u' || key === 'U' || key === 'Backspace') {
+      e.preventDefault();
+      this.$undoBtn?.click();
+      return;
+    }
+
+    if (key === 'Escape') {
+      if (this.renderer.keyboardCursor) {
+        e.preventDefault();
+        this.renderer.setKeyboardCursor(null);
+      }
+    }
   }
 
   setMode(newMode) {

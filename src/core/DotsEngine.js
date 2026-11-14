@@ -368,3 +368,65 @@ export function chooseBotMove(state) {
   riskyMoves.sort((a, b) => a.givesThirdSideCount - b.givesThirdSideCount);
   return { type: riskyMoves[0].type, r: riskyMoves[0].r, c: riskyMoves[0].c };
 }
+
+/**
+ * Pure deterministic segment-to-segment cursor stepper for keyboard power users (GHI #3).
+ *
+ * Segments live on an interleaved half-row grid:
+ * - Even half-rows (2 * r) are horizontal segments `h:r:c` (r in [0..boxRows], c in [0..boxCols-1])
+ * - Odd half-rows (2 * r + 1) are vertical segments `v:r:c` (r in [0..boxRows-1], c in [0..boxCols])
+ *
+ * Supported directions:
+ * - 'left' / 'right': moves along the current segment row with wrap-around
+ * - 'up' / 'down': steps one half-row up/down (h <-> v <-> h) with wrap-around
+ * - 'rotate' / 'toggle': flips in place between 'h' and 'v' at the current (r, c)
+ *
+ * Does NOT auto-advance or skip claimed segments, ensuring 100% predictable movement.
+ */
+export function stepSegmentCursor(state, cursor, direction) {
+  if (!state) return null;
+  const R = state.boxRows;
+  const C = state.boxCols;
+  const totalHalfRows = 2 * R + 1;
+
+  if (!cursor || (cursor.type !== 'h' && cursor.type !== 'v')) {
+    return { type: 'h', r: 0, c: 0 };
+  }
+
+  const type = cursor.type;
+  const r = Math.max(0, Math.min(type === 'h' ? R : R - 1, Number(cursor.r) || 0));
+  const c = Math.max(0, Math.min(type === 'h' ? C - 1 : C, Number(cursor.c) || 0));
+  const dir = String(direction || '').toLowerCase();
+
+  if (dir === 'left') {
+    const colCount = type === 'h' ? C : C + 1;
+    return { type, r, c: (c - 1 + colCount) % colCount };
+  }
+
+  if (dir === 'right') {
+    const colCount = type === 'h' ? C : C + 1;
+    return { type, r, c: (c + 1) % colCount };
+  }
+
+  if (dir === 'up' || dir === 'down') {
+    const halfRow = type === 'h' ? 2 * r : 2 * r + 1;
+    const delta = dir === 'down' ? 1 : -1;
+    const nextHalfRow = (halfRow + delta + totalHalfRows) % totalHalfRows;
+    if (nextHalfRow % 2 === 0) {
+      const nextR = nextHalfRow / 2;
+      return { type: 'h', r: nextR, c: Math.min(c, C - 1) };
+    }
+    const nextR = (nextHalfRow - 1) / 2;
+    return { type: 'v', r: nextR, c: Math.min(c, C) };
+  }
+
+  if (dir === 'rotate' || dir === 'toggle') {
+    if (type === 'h') {
+      return { type: 'v', r: Math.min(r, R - 1), c: Math.min(c, C) };
+    }
+    return { type: 'h', r: Math.min(r, R), c: Math.min(c, C - 1) };
+  }
+
+  return { type, r, c };
+}
+

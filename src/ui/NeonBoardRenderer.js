@@ -61,6 +61,7 @@ export class NeonBoardRenderer {
       anchorDot: null, // { r, c, x, y }
       hoverSegment: null, // { type: 'h'|'v', r, c }
     };
+    this.keyboardCursor = null; // { type: 'h'|'v', r, c } | null
 
     this._rafId = null;
     this._bindEvents();
@@ -81,8 +82,17 @@ export class NeonBoardRenderer {
 
   setState(state) {
     this.state = state;
+    this.keyboardCursor = null;
     this.boxAnimations.clear();
     this.resize();
+  }
+
+  setKeyboardCursor(seg) {
+    if (!seg || (seg.type !== 'h' && seg.type !== 'v')) {
+      this.keyboardCursor = null;
+      return;
+    }
+    this.keyboardCursor = { type: seg.type, r: seg.r, c: seg.c };
   }
 
   setPlayers(playersMap) {
@@ -231,6 +241,7 @@ export class NeonBoardRenderer {
       if (!this.state || this.state.isGameOver) return;
       if (e.cancelable) e.preventDefault();
       const pt = getPos(e);
+      this.keyboardCursor = null;
       this.pointer.isDown = true;
       this.pointer.startX = pt.x;
       this.pointer.startY = pt.y;
@@ -246,7 +257,9 @@ export class NeonBoardRenderer {
       this.pointer.currX = pt.x;
       this.pointer.currY = pt.y;
       if (this.pointer.isDown && e.cancelable) e.preventDefault();
-      this.pointer.hoverSegment = this._resolveSegmentFromInteraction(pt.x, pt.y);
+      const hover = this._resolveSegmentFromInteraction(pt.x, pt.y);
+      if (hover) this.keyboardCursor = null;
+      this.pointer.hoverSegment = hover;
     };
 
     const onUp = (e) => {
@@ -488,24 +501,30 @@ export class NeonBoardRenderer {
       }
     }
 
-    // 3. Hover / Swipe Preview Segment = "GHOST" move (not played yet!)
+    // 3. Hover / Swipe / Keyboard Preview Segment = "GHOST" move (not played yet!)
     // Real moves are solid + neon glow; the ghost is ONLY a plain dashed line
     // in the player's color (no glow, no white outline, no animation: keep it sober).
-    if (this.pointer.hoverSegment && !this.state.isGameOver) {
-      const seg = this.pointer.hoverSegment;
-      const activeP = this.players[this.state.currentTurn] || this.players.p1;
-      const coords = this._getSegmentEndpoints(seg.type, seg.r, seg.c);
-      ctx.save();
-      ctx.shadowBlur = 0;
-      ctx.lineCap = 'round';
-      ctx.setLineDash([Math.max(6, step * 0.11), Math.max(6, step * 0.1)]);
-      ctx.strokeStyle = hexToRgba(activeP.colorHex, 0.9);
-      ctx.lineWidth = Math.max(4, step * 0.07);
-      ctx.beginPath();
-      ctx.moveTo(coords.x1, coords.y1);
-      ctx.lineTo(coords.x2, coords.y2);
-      ctx.stroke();
-      ctx.restore();
+    const previewSeg = this.pointer.hoverSegment || this.keyboardCursor;
+    if (previewSeg && !this.state.isGameOver) {
+      const isAlreadyClaimed =
+        previewSeg.type === 'h'
+          ? Boolean(this.state.H?.[previewSeg.r]?.[previewSeg.c])
+          : Boolean(this.state.V?.[previewSeg.r]?.[previewSeg.c]);
+      if (!isAlreadyClaimed) {
+        const activeP = this.players[this.state.currentTurn] || this.players.p1;
+        const coords = this._getSegmentEndpoints(previewSeg.type, previewSeg.r, previewSeg.c);
+        ctx.save();
+        ctx.shadowBlur = 0;
+        ctx.lineCap = 'round';
+        ctx.setLineDash([Math.max(6, step * 0.11), Math.max(6, step * 0.1)]);
+        ctx.strokeStyle = hexToRgba(activeP.colorHex, 0.9);
+        ctx.lineWidth = Math.max(4, step * 0.07);
+        ctx.beginPath();
+        ctx.moveTo(coords.x1, coords.y1);
+        ctx.lineTo(coords.x2, coords.y2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     // 4. Claimed Horizontal & Vertical Neon Segments
@@ -556,6 +575,44 @@ export class NeonBoardRenderer {
       for (let c = 0; c < this.state.dotCols; c++) {
         drawClaimedSegment('v', r, c, this.state.V[r][c]);
       }
+    }
+
+    // 4b. Keyboard Cursor Focus Indicator (visible both on free and already-claimed segments)
+    if (this.keyboardCursor && !this.state.isGameOver) {
+      const kSeg = this.keyboardCursor;
+      const activeP = this.players[this.state.currentTurn] || this.players.p1;
+      const coords = this._getSegmentEndpoints(kSeg.type, kSeg.r, kSeg.c);
+      const isClaimed =
+        kSeg.type === 'h'
+          ? Boolean(this.state.H?.[kSeg.r]?.[kSeg.c])
+          : Boolean(this.state.V?.[kSeg.r]?.[kSeg.c]);
+
+      ctx.save();
+      if (isClaimed) {
+        // When stepping across an already-drawn line, overlay a thin dashed indicator in the active player's color
+        ctx.lineCap = 'round';
+        ctx.setLineDash([Math.max(4, step * 0.08), Math.max(5, step * 0.09)]);
+        ctx.strokeStyle = hexToRgba(activeP.colorHex, 0.95);
+        ctx.lineWidth = Math.max(3, step * 0.055);
+        ctx.beginPath();
+        ctx.moveTo(coords.x1, coords.y1);
+        ctx.lineTo(coords.x2, coords.y2);
+        ctx.stroke();
+      }
+      // Subtle focus rings around the two endpoint dots of the focused segment
+      ctx.setLineDash([]);
+      ctx.strokeStyle = hexToRgba(activeP.colorHex, 0.92);
+      ctx.lineWidth = 2;
+      const ringRadius = Math.max(8, Math.min(11, step * 0.15));
+      for (const [px, py] of [
+        [coords.x1, coords.y1],
+        [coords.x2, coords.y2],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(px, py, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
     // 5. Breathing Neon Dots

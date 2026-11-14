@@ -8,6 +8,7 @@ import {
   chooseBotMove,
   parseGridKey,
   getMoveTimeStats,
+  stepSegmentCursor,
 } from '../src/core/DotsEngine.js';
 import { NeonBoardRenderer } from '../src/ui/NeonBoardRenderer.js';
 import { PuffinLogin, validateAndNormalizeScorePayload } from '../src/puffin-login.js';
@@ -250,5 +251,52 @@ test('getMoveTimeStats computes accurate average and max move times for P1 and P
   assert.equal(normalized.avg_move_sec, 1.85);
   assert.equal(normalized.max_move_sec, 4.1);
 });
+
+test('GHI #3: stepSegmentCursor navigates deterministically between segments without auto-advance magic', () => {
+  for (const gridKey of ['3x3', '4x5', '5x5']) {
+    const state = createGameState(gridKey);
+    // Initial fallback cursor
+    let cur = stepSegmentCursor(state, null, 'right');
+    assert.deepEqual(cur, { type: 'h', r: 0, c: 0 });
+
+    // Step right and left along top horizontal row
+    cur = stepSegmentCursor(state, cur, 'right');
+    assert.deepEqual(cur, { type: 'h', r: 0, c: 1 });
+    cur = stepSegmentCursor(state, cur, 'left');
+    assert.deepEqual(cur, { type: 'h', r: 0, c: 0 });
+
+    // Wrap-around left from c=0 goes to c = boxCols - 1
+    const wrappedLeft = stepSegmentCursor(state, cur, 'left');
+    assert.deepEqual(wrappedLeft, { type: 'h', r: 0, c: state.boxCols - 1 });
+
+    // Step down from h:0:0 goes to v:0:0 (left vertical edge of box (0,0))
+    cur = stepSegmentCursor(state, { type: 'h', r: 0, c: 0 }, 'down');
+    assert.deepEqual(cur, { type: 'v', r: 0, c: 0 });
+
+    // Step right on vertical row goes to v:0:1 (right vertical edge of box (0,0))
+    cur = stepSegmentCursor(state, cur, 'right');
+    assert.deepEqual(cur, { type: 'v', r: 0, c: 1 });
+
+    // Step down from v:0:1 goes to h:1:1, then left goes to h:1:0 (bottom horizontal edge of box (0,0))
+    cur = stepSegmentCursor(state, cur, 'down');
+    assert.deepEqual(cur, { type: 'h', r: 1, c: 1 });
+    cur = stepSegmentCursor(state, cur, 'left');
+    assert.deepEqual(cur, { type: 'h', r: 1, c: 0 });
+
+    // Rotate toggles between h and v in place
+    const rotated = stepSegmentCursor(state, { type: 'h', r: 0, c: 0 }, 'rotate');
+    assert.deepEqual(rotated, { type: 'v', r: 0, c: 0 });
+    assert.deepEqual(stepSegmentCursor(state, rotated, 'rotate'), { type: 'h', r: 0, c: 0 });
+
+    // Claiming a segment does NOT move the cursor and stepping across claimed segments remains deterministic
+    claimSegment(state, 'h', 0, 1);
+    assert.deepEqual(stepSegmentCursor(state, { type: 'h', r: 0, c: 0 }, 'right'), {
+      type: 'h',
+      r: 0,
+      c: 1,
+    });
+  }
+});
+
 
 
