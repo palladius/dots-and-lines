@@ -161,6 +161,8 @@ test('GHI #1: #game-shell removes intermediate rivalry-strip and status-line clu
   assert.ok(gameShellPart.length > 0, '#game-shell exists');
   assert.ok(!gameShellPart.includes('class="rivalry-strip"'), 'No rivalry-strip inside #game-shell');
   assert.ok(!gameShellPart.includes('id="status-line"'), 'No status-line inside #game-shell');
+  assert.ok(gameShellPart.includes('id="hud-mode-btn"'), 'Top-bar mode switch pill present');
+  assert.ok(gameShellPart.includes('id="p2-mode-toggle-btn"'), 'Direct P2 card Human/Bot switch chip present');
   assert.ok(html.includes('height: 100dvh;'), '100dvh lock present');
 });
 

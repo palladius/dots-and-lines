@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1] - 2026-11-14
+
+### Added
+- **🤖⇄👤 Direct In-Game 2P / vs Bot Switcher (P2 Card + Top-Bar, zero extra vertical space)**:
+  - Added `#p2-mode-toggle-btn` (`🤖 vs Bot` ↔ `👤 Umano`) directly inside the Player 2 Card header (`#p2-card`) and made `#p2-bot-pill` clickable, plus `#hud-mode-btn` (`👥 P vs P` ↔ `👤 vs 🤖`) in the top bar.
+  - Players can now switch P2 between a second human (`<puffin-login>`) and the CPU Bot at any time directly on the game screen without returning to the home screen.
+  - If the board is untouched (`0` moves) or P1 only just played the opening move, switching to `🤖 vs Bot` seamlessly hands P2 over to the CPU Bot live without resetting the board.
+
 ## [1.2.0] - 2026-11-14
 
 ### Added

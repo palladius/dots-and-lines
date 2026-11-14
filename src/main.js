@@ -40,7 +40,12 @@ const COPY = {
     newGameBtn: 'Nuova partita',
     playAgainBtn: '↻ Gioca Ancora',
     closeBtn: 'Chiudi',
-    dualPrompt: 'Doppio Login: clicca i badge P1 e P2 per scegliere chi sfida chi!',
+    dualPrompt: 'Scegli 👥 2P o 🤖 Bot qui o direttamente sulla Card P2 in partita!',
+    hudMode2p: '👥 P vs P',
+    hudModeBot: '👤 vs 🤖',
+    p2SwitchToBot: '🤖 vs Bot',
+    p2SwitchToHuman: '👤 Umano',
+    botBadgeLabel: 'Bot CPU ⇄',
     h2hTemplate: (nameA, winsA, winsB, nameB, ties, maxCombo, holder) =>
       `⚔️ H2H ${nameA} ${winsA} – ${winsB} ${nameB}${ties ? ` (${ties} par.)` : ''}${
         maxCombo ? ` • Max Combo: ${maxCombo}x (${holder})` : ''
@@ -72,7 +77,12 @@ const COPY = {
     newGameBtn: 'New game',
     playAgainBtn: '↻ Play Again',
     closeBtn: 'Close',
-    dualPrompt: 'Dual Login: tap the P1 & P2 badges to pick the two challengers!',
+    dualPrompt: 'Pick 👥 2P or 🤖 Bot here or directly on the P2 Card during the game!',
+    hudMode2p: '👥 P vs P',
+    hudModeBot: '👤 vs 🤖',
+    p2SwitchToBot: '🤖 vs Bot',
+    p2SwitchToHuman: '👤 Human',
+    botBadgeLabel: 'Bot CPU ⇄',
     h2hTemplate: (nameA, winsA, winsB, nameB, ties, maxCombo, holder) =>
       `⚔️ H2H ${nameA} ${winsA} – ${winsB} ${nameB}${ties ? ` (${ties} ties)` : ''}${
         maxCombo ? ` • Max Combo: ${maxCombo}x (${holder})` : ''
@@ -173,6 +183,7 @@ class DotsAndLinesApp {
 
     this.$homeBtn = document.getElementById('home-btn');
     this.$hudLangBtn = document.getElementById('hud-lang-btn');
+    this.$hudModeBtn = document.getElementById('hud-mode-btn');
     this.$hudSoundBtn = document.getElementById('hud-sound-btn');
     this.$hudHofBtn = document.getElementById('hud-hof-btn');
 
@@ -184,9 +195,11 @@ class DotsAndLinesApp {
     this.$p2SlotLabel = document.getElementById('p2-slot-label');
     this.$p1ComboPill = document.getElementById('p1-combo-pill');
     this.$p2ComboPill = document.getElementById('p2-combo-pill');
+    this.$p2ModeToggleBtn = document.getElementById('p2-mode-toggle-btn');
     this.$puffinP1 = document.getElementById('puffin-p1');
     this.$puffinP2 = document.getElementById('puffin-p2');
     this.$p2BotPill = document.getElementById('p2-bot-pill');
+    this.$p2BotPillLabel = document.getElementById('p2-bot-pill-label');
 
     this.$h2hSummary = document.getElementById('h2h-summary');
     this.$mode2pBtn = document.getElementById('mode-2p-btn');
@@ -464,12 +477,22 @@ class DotsAndLinesApp {
     });
 
     this.$mode2pBtn.addEventListener('click', () => {
+      this.sound.playLineClick();
       this.setMode('2p-local');
     });
 
     this.$modeBotBtn.addEventListener('click', () => {
+      this.sound.playLineClick();
       this.setMode('1p-bot');
     });
+
+    const toggleModeQuick = () => {
+      this.sound.playLineClick();
+      this.setMode(this.mode === '1p-bot' ? '2p-local' : '1p-bot');
+    };
+    this.$hudModeBtn?.addEventListener('click', toggleModeQuick);
+    this.$p2ModeToggleBtn?.addEventListener('click', toggleModeQuick);
+    this.$p2BotPill?.addEventListener('click', toggleModeQuick);
 
     this.$playAgainBtn.addEventListener('click', () => {
       if (this.$gameoverDialog.open) this.$gameoverDialog.close();
@@ -561,12 +584,42 @@ class DotsAndLinesApp {
     }
   }
 
+  syncModeButtons() {
+    const tr = COPY[this.lang] || COPY.it;
+    const isBot = this.mode === '1p-bot';
+    this.$mode2pBtn?.classList.toggle('active', !isBot);
+    this.$modeBotBtn?.classList.toggle('active', isBot);
+    if (this.$hudModeBtn) {
+      this.$hudModeBtn.textContent = isBot ? tr.hudModeBot : tr.hudMode2p;
+    }
+    if (this.$p2ModeToggleBtn) {
+      this.$p2ModeToggleBtn.textContent = isBot ? tr.p2SwitchToHuman : tr.p2SwitchToBot;
+      this.$p2ModeToggleBtn.classList.toggle('is-bot-active', isBot);
+    }
+    if (this.$p2BotPillLabel) {
+      this.$p2BotPillLabel.textContent = tr.botBadgeLabel;
+    }
+  }
+
   setMode(newMode) {
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
     this.mode = newMode === '1p-bot' ? '1p-bot' : '2p-local';
     localStorage.setItem('dots_mode_v1', this.mode);
-    this.$mode2pBtn.classList.toggle('active', this.mode === '2p-local');
-    this.$modeBotBtn.classList.toggle('active', this.mode === '1p-bot');
+    this.syncModeButtons();
     this.syncPlayersFromPuffin();
+
+    // If board is untouched (0 moves) or P1 only just made the opening move, switch P2 live without wiping the board!
+    if (this.state && !this.state.isGameOver && this.state.moveCount <= 1 && this.state.scores.p2 === 0) {
+      this.updateHud();
+      if (this.mode === '1p-bot' && this.state.currentTurn === 'p2') {
+        this.botTimer = setTimeout(() => this._runBotTurn(), 380);
+      }
+      return;
+    }
+
     this.startNewGame(this.gridKey, true);
   }
 
@@ -594,8 +647,7 @@ class DotsAndLinesApp {
     this.$gridSelector.querySelectorAll('[data-grid]').forEach((b) => {
       b.classList.toggle('active', b.getAttribute('data-grid') === this.gridKey);
     });
-    if (this.$mode2pBtn) this.$mode2pBtn.classList.toggle('active', this.mode === '2p-local');
-    if (this.$modeBotBtn) this.$modeBotBtn.classList.toggle('active', this.mode === '1p-bot');
+    this.syncModeButtons();
   }
 
   syncSoundButtons() {
