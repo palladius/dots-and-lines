@@ -1,14 +1,21 @@
 # Changelog
 
-## [1.1.3] - 2026-11-12
+## [1.1.4] - 2026-11-14
 
 ### Added
-- **🃏✨ "Riscatta Carta!" claim animation**: clicking now gives instant, unmistakable feedback. The button shows a spinner and "Riscatto in corso…", the card glows and pulses, then flies and shrinks toward the 🃏 Album button with a sparkle burst, the button turns green with "✅ Riscattata! Nel tuo Album", and only then the toast closes (about 1.4 s total). Honors `prefers-reduced-motion`.
+- **🃏✨ "Riscatta Carta!" claim animation**: clicking now gives instant, unmistakable feedback. The button shows a spinner and "Riscatto in corso…", the card glows and pulses, then flies and shrinks toward the 🃏 Album button with a sparkle burst, the button turns green with "✅ Riscattata! Nel tuo Album", and only then the toast closes (about 2 s total). Honors `prefers-reduced-motion`.
 - **🧪 Real E2E redeem test (`just e2e [chrome|webkit]`)**: `tests/e2e/redeem_card_e2e.py` plays a full 3x3 game by real mouse clicks on the canvas, waits for the Hall of Fame modal and the dropped card, then clicks "✨ Riscatta Carta!" with the real mouse (`page.mouse.click`, so browser hit-testing applies). It checks that feedback appears within 300 ms, that the toast closes, and that the card is in the Album. Passes on Chrome and WebKit (iPad engine).
 
 ### Fixed
 - **⚡ No more unclickable gap when the Hall of Fame opens**: the card toast now follows `<dialog>` open/close through a `MutationObserver`, so it moves into the modal right away instead of on the next 250 ms poll (measured gap was about 34 ms in which clicks were swallowed).
 - **🧊 Stale JS after `git pull` in local dev**: `just serve` now uses `scripts/serve_nocache.py` (`Cache-Control: no-store`). Plain `python3 -m http.server` only sends `Last-Modified`, so Chrome kept running the cached pre-fix `src/puffin-cards.js` after a normal reload (verified: `transferSize: 0`), which made the v1.0.3 "Riscatta Carta" fix look still broken.
+
+## [1.1.3] - 2026-11-12
+
+### Changed
+- **🤖👤 Minimalist Icons for BOT & Guest Mode**:
+  - Added clean geometric SVG icons (`assets/avatars/bot-simple.svg` in terminal green `#16A34A` and `assets/avatars/guest-simple.svg`) for CPU Bot and Guest / unauthenticated players.
+  - Updated `NeonBoardRenderer.js` (`_drawSimpleBotStamp` and `_drawSimpleGuestStamp`) to draw crisp vector robot and user silhouettes inside conquered boxes for Bot and Guest players, keeping full Pixar portrait medallions exclusively for logged-in family members (`ale`, `seby`, `riccardo`, `kate`, `lucilla`).
 
 ## [1.1.2] - 2026-11-12
 

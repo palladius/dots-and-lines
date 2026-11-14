@@ -438,13 +438,20 @@ export class NeonBoardRenderer {
         ctx.fill();
         ctx.stroke();
 
-        // Player Pixar avatar medallion or initial stamp inside conquered box.
-        // Unlogged players (isLogged === false) => plain neon color only, NO face/stamp.
-        const showStamp = pInfo.isLogged !== false;
-        const avatarImg = pInfo.avatar ? this.avatarImages.get(pInfo.avatar) : null;
+        // Player stamp inside conquered box:
+        // - Simple minimalist vector icon for BOT ('bot') and Guest/Unlogged ('guest')
+        // - Family Pixar portrait medallion for authenticated family members (Ale, Seby, Riccardo, Kate, Nonna)
         const stampRadius = Math.max(10, Math.min(22, boxSize * 0.34));
-        if (!showStamp) {
-          // color-only box, nothing to draw
+        const isBotIcon = pInfo.iconKind === 'bot' || pInfo.id === 'cpu';
+        const isGuestIcon =
+          pInfo.iconKind === 'guest' || pInfo.id === 'guest' || pInfo.isLogged === false;
+        const avatarImg =
+          !isBotIcon && !isGuestIcon && pInfo.avatar ? this.avatarImages.get(pInfo.avatar) : null;
+
+        if (isBotIcon) {
+          this._drawSimpleBotStamp(ctx, stampRadius, color);
+        } else if (isGuestIcon) {
+          this._drawSimpleGuestStamp(ctx, stampRadius, color);
         } else if (avatarImg && avatarImg.complete && avatarImg.naturalWidth > 0) {
           ctx.save();
           ctx.beginPath();
@@ -474,11 +481,7 @@ export class NeonBoardRenderer {
           ctx.lineWidth = 1.8;
           ctx.stroke();
         } else {
-          ctx.fillStyle = hexToRgba(color, 0.92);
-          ctx.font = `800 ${Math.round(stampRadius * 1.1)}px Inter, system-ui, sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(pInfo.emoji || pInfo.name?.[0] || '★', 0, 1);
+          this._drawSimpleGuestStamp(ctx, stampRadius, color);
         }
 
         ctx.restore();
@@ -662,5 +665,70 @@ export class NeonBoardRenderer {
     ctx.arcTo(x, y + h, x, y, rad);
     ctx.arcTo(x, y, x + w, y, rad);
     ctx.closePath();
+  }
+
+  /**
+   * Draws a simple, clean minimalist Robot head icon inside a conquered box for BOT mode.
+   */
+  _drawSimpleBotStamp(ctx, r, color) {
+    ctx.save();
+    ctx.strokeStyle = hexToRgba(color, 0.95);
+    ctx.fillStyle = hexToRgba(color, 0.95);
+    ctx.lineWidth = Math.max(1.8, r * 0.14);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Antenna
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.52);
+    ctx.lineTo(0, -r * 0.82);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.88, Math.max(1.8, r * 0.13), 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rounded robot head visor
+    const hw = r * 1.18;
+    const hh = r * 0.92;
+    this._roundRectPath(ctx, -hw / 2, -hh / 2 + r * 0.08, hw, hh, r * 0.26);
+    ctx.stroke();
+
+    // Two simple glowing eyes
+    const eyeR = Math.max(1.7, r * 0.13);
+    ctx.beginPath();
+    ctx.arc(-r * 0.26, r * 0.04, eyeR, 0, Math.PI * 2);
+    ctx.arc(r * 0.26, r * 0.04, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Simple flat mouth line
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.24, r * 0.3);
+    ctx.lineTo(r * 0.24, r * 0.3);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  /**
+   * Draws a simple, clean minimalist User/Pawn silhouette icon inside a conquered box for Guest mode.
+   */
+  _drawSimpleGuestStamp(ctx, r, color) {
+    ctx.save();
+    ctx.strokeStyle = hexToRgba(color, 0.95);
+    ctx.lineWidth = Math.max(1.9, r * 0.15);
+    ctx.lineCap = 'round';
+
+    // Simple circle head
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.24, r * 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Simple curved shoulders arc
+    ctx.beginPath();
+    ctx.arc(0, r * 0.62, r * 0.56, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+
+    ctx.restore();
   }
 }
